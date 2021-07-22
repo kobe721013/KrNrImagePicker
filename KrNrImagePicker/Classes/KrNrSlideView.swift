@@ -140,7 +140,7 @@ public class KrNrSlideView: UIView {
         for index in range
         {
             let asset = self.assets[index]
-            let item = ZoomScrollView(frame: frame)
+            let item = KrNrZoomScrollView(frame: frame)
             item.tag = index
             cachImageManager.requestImage(for: asset, targetSize: targetSize, contentMode: .default, options: options, resultHandler: { (image, info) in
                 
@@ -185,7 +185,7 @@ public class KrNrSlideView: UIView {
 //            item.image = UIImage(named: fileNames[imageIndex])
 //            item.con·tentMode = .scaleAspectFit
             
-            let item = ZoomScrollView(frame: frame)
+            let item = KrNrZoomScrollView(frame: frame)
             item.tag = index
             let imageIndex = index % 5
             item.image =  UIImage(named: fileNames[imageIndex])
@@ -240,11 +240,11 @@ public class KrNrSlideView: UIView {
        
         //if lastItem.frame.size.width < scrollView.frame.size.width
         
-        if (lastItem is ZoomScrollView) == false
+        if (lastItem is KrNrZoomScrollView) == false
         {
             print("2 got unKNOWN view(\(String(describing: type(of: lastItem))), remove it")
             lastItem.removeFromSuperview()
-            lastItem = self.scrollView.subviews.last! as! ZoomScrollView
+            lastItem = self.scrollView.subviews.last! as! KrNrZoomScrollView
             
         }
         lastItem.removeFromSuperview()
@@ -252,14 +252,14 @@ public class KrNrSlideView: UIView {
       
         
         //get current first item ipreload index from index
-        let firstItem = self.scrollView.subviews.first! as! ZoomScrollView
+        let firstItem = self.scrollView.subviews.first! as! KrNrZoomScrollView
         print("firstItem tag=\(firstItem.tag)")
         lastItem.tag = firstItem.tag - 1
         print("ok now insert index =\(lastItem.tag) to first")
         //test image
         //updateTestImage(for: lastItem.tag, on: (lastItem as! ZoomScrollView))
         //real phone photo
-        updateRealImage(for: lastItem.tag, on: lastItem as! ZoomScrollView)
+        updateRealImage(for: lastItem.tag, on: lastItem as! KrNrZoomScrollView)
         
         //insert to first
         
@@ -286,11 +286,11 @@ public class KrNrSlideView: UIView {
         var firstItem = self.scrollView.subviews[0]// as! ZoomScrollView
         //if firstItem.frame.size.width < scrollView.frame.size.width
         
-        if (firstItem is ZoomScrollView) == false
+        if (firstItem is KrNrZoomScrollView) == false
         {
             print("2 got unKNOWN view, remove it")
             firstItem.removeFromSuperview()
-            firstItem = self.scrollView.subviews[0] as! ZoomScrollView
+            firstItem = self.scrollView.subviews[0] as! KrNrZoomScrollView
         }
         
         firstItem.removeFromSuperview()
@@ -302,7 +302,7 @@ public class KrNrSlideView: UIView {
         //test imgae
         //updateTestImage(for: nextIndex, on: firstItem as! ZoomScrollView)
         //real phone photo
-        updateRealImage(for: nextIndex, on: firstItem as! ZoomScrollView)
+        updateRealImage(for: nextIndex, on: firstItem as! KrNrZoomScrollView)
         
         self.addViewToIndex(view: firstItem, index: self.nextIndex)
         print("append item index=\(self.nextIndex) to Last, Number=\(imageIndex+1)")
@@ -315,7 +315,7 @@ public class KrNrSlideView: UIView {
         print("=====")
     }
     
-    func updateTestImage(for index:Int, on view:ZoomScrollView)
+    func updateTestImage(for index:Int, on view:KrNrZoomScrollView)
     {
         //test picture
         let imageIndex = index % 5
@@ -323,7 +323,7 @@ public class KrNrSlideView: UIView {
         view.image = image
     }
     
-    func updateRealImage(for index:Int, on imageView:ZoomScrollView)
+    func updateRealImage(for index:Int, on imageView:KrNrZoomScrollView)
     {
         let options = PHImageRequestOptions()
         options.resizeMode = .fast
@@ -379,7 +379,7 @@ public class KrNrSlideView: UIView {
         
         for view in scrollView.subviews
         {
-            if view is ZoomScrollView
+            if view is KrNrZoomScrollView
             {
                 let index = view.tag
                 //這是一個重點，把每一個subview的frame放在以340為倍數的數值，再加上一個10的空白處
@@ -387,7 +387,7 @@ public class KrNrSlideView: UIView {
                 print("index=\(index),  viewFrame=\(view.frame)")
                 
                 //一併把每一個ZoomScrollView裡面的imageView也一併update frame
-                (view as! ZoomScrollView).updateFrame(newFrame: view.frame)
+                (view as! KrNrZoomScrollView).updateFrame(newFrame: view.frame)
             }
         }
         

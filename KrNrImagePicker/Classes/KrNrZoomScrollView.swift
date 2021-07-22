@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ZoomScrollView: UIScrollView {
+class KrNrZoomScrollView: UIScrollView {
 
    
     /*
@@ -80,7 +80,7 @@ class ZoomScrollView: UIScrollView {
 
 }
 
-extension ZoomScrollView : UIScrollViewDelegate
+extension KrNrZoomScrollView : UIScrollViewDelegate
 {
     func viewForZooming(in scrollView: UIScrollView) -> UIView?
     {
