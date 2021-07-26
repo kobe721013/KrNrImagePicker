@@ -8,12 +8,21 @@
 
 import UIKit
 import KrNrImagePicker
+import Photos
 class ViewController: UIViewController {
 
-    private var krnrSlideView:KrNrSlideView!
+   private var krnrSlideView:KrNrSlideView!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        setUpUI()
+        
+//        var dict = [String: [Int]]()
+//        dict["111"] = [Int]()
+//        dict["111"]?.append(1)
+//        dict["111"]?.append(2)
+//        print("count=\(dict.count)")
+        
+        //setUpUI()
         // Do any additional setup after loading the view, typically from a nib.
     }
 
@@ -22,21 +31,27 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
+    @IBAction func addImage(_ sender: UIButton) {
+        let picker = KrNrImagePicker()
+        present(picker, animated: true, completion: nil)
+        
+        
+    }
     override func viewWillLayoutSubviews() {
         
-        print("(ViewController)-viewWillLayoutSubviews: current bound=\(view.bounds)")
-        krnrSlideView.updateFrame(bounds: view.bounds)
+        //print("(ViewController)-viewWillLayoutSubviews: current bound=\(view.bounds)")
+        //krnrSlideView.updateFrame(bounds: view.bounds)
     }
     
-    private func setUpUI() {
-        self.view.backgroundColor = #colorLiteral(red: 0.1725490196, green: 0.2431372549, blue: 0.3137254902, alpha: 1)
-        
-        krnrSlideView = KrNrSlideView(frame: CGRect(x: 0, y: 0, width: self.view.frame.size.width, height: self.view.frame.size.height))
-        self.view.addSubview(krnrSlideView)
-       
-        //bannerView.backgroundColor = UIColor.green
-       // krnrSlideView.reloadData()
-    }
+//    private func setUpUI() {
+//        self.view.backgroundColor = #colorLiteral(red: 0.1725490196, green: 0.2431372549, blue: 0.3137254902, alpha: 1)
+//
+//        krnrSlideView = KrNrSlideView(frame: CGRect(x: 0, y: 0, width: self.view.frame.size.width, height: self.view.frame.size.height))
+//        self.view.addSubview(krnrSlideView)
+//
+//        //bannerView.backgroundColor = UIColor.green
+//       // krnrSlideView.reloadData()
+//    }
     
 
 }

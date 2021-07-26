@@ -35,7 +35,7 @@ class KrNrZoomScrollView: UIScrollView {
         let newFrame = CGRect(x: 0, y: 0, width: frame.width, height: frame.height)
         
         super.init(frame: newFrame)
-        print("ZoomScrollView init(), newFrame=\(newFrame)")
+        //print("ZoomScrollView init(), newFrame=\(newFrame)")
         setup()
     }
     
@@ -47,9 +47,8 @@ class KrNrZoomScrollView: UIScrollView {
     {
         // image
         imageView = UIImageView(frame: frame)
-        //imageView.backgroundColor = .purple
+        imageView.isUserInteractionEnabled = true
         imageView.contentMode = .scaleAspectFit
-        
         addSubview(imageView)
         
         maximumZoomScale = 4.0
@@ -64,7 +63,7 @@ class KrNrZoomScrollView: UIScrollView {
     }
     
     override func layoutSubviews() {
-        print("ZoomScrollView layoutSubviews, scrollview frame=\(frame)")
+        //print("ZoomScrollView layoutSubviews, scrollview frame=\(frame)")
     }
     
     func updateFrame(newFrame: CGRect)
@@ -89,7 +88,7 @@ extension KrNrZoomScrollView : UIScrollViewDelegate
     
     func scrollViewDidZoom(_ scrollView: UIScrollView)
     {
-        print("scrollViewDidZoom- imageView.frame=\(imageView.frame). ScrollView frame=\(self.frame), imageSize=\(imageView.image?.size), zoomScale=\(scrollView.zoomScale), contentSize=\(scrollView.contentSize), contentOffset=\(contentOffset)")
+        //print("scrollViewDidZoom- imageView.frame=\(imageView.frame). ScrollView frame=\(self.frame), imageSize=\(imageView.image?.size), zoomScale=\(scrollView.zoomScale), contentSize=\(scrollView.contentSize), contentOffset=\(contentOffset)")
         
        
         if scrollView.zoomScale > 1 {
@@ -107,7 +106,7 @@ extension KrNrZoomScrollView : UIScrollViewDelegate
                 let newWidth = image.size.width * ratio
                 let newHeight = image.size.height * ratio
 
-                print("ratioW=\(ratioW), ratioH=\(ratioH), newWidth=\(newWidth), newHeight=\(newHeight)")
+                //print("ratioW=\(ratioW), ratioH=\(ratioH), newWidth=\(newWidth), newHeight=\(newHeight)")
                 
                 //這邊其實不太懂為何要用newWidth * scrollView.zoomScale 這一個判斷
                 //這一個條件應該是要用在圖片小於imageview的任何一邊長寬的情況
@@ -126,7 +125,7 @@ extension KrNrZoomScrollView : UIScrollViewDelegate
                 scrollView.contentInset = UIEdgeInsets(top: top, left: left, bottom: top, right: left)
 
                     
-                print("contentInset=\(scrollView.contentInset)")
+                //print("contentInset=\(scrollView.contentInset)")
                 
             }
 

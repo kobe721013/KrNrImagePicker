@@ -15,6 +15,8 @@
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
 		839FAD28C21C17A40B74288A /* Pods_KrNrImagePicker_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E7070BB93B188CC079C45293 /* Pods_KrNrImagePicker_Example.framework */; };
 		8A25BE0143F90EE9D1657A87 /* Pods_KrNrImagePicker_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCE35E2ADAA6F33CF930D75B /* Pods_KrNrImagePicker_Tests.framework */; };
+		CDDE2F3126B187EC00561B37 /* KobeCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDDE2F3026B187EC00561B37 /* KobeCollectionViewCell.swift */; };
+		CDDE2F3526B1890400561B37 /* ImageWallViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDDE2F3426B1890400561B37 /* ImageWallViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +46,8 @@
 		7FA4F24BFF3F62E91FA08FDD /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		A6F704C6F712087662DFD4B9 /* KrNrImagePicker.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = KrNrImagePicker.podspec; path = ../KrNrImagePicker.podspec; sourceTree = "<group>"; };
 		BF8569D18D67A9EA503421E8 /* Pods-KrNrImagePicker_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-KrNrImagePicker_Tests.debug.xcconfig"; path = "Target Support Files/Pods-KrNrImagePicker_Tests/Pods-KrNrImagePicker_Tests.debug.xcconfig"; sourceTree = "<group>"; };
+		CDDE2F3026B187EC00561B37 /* KobeCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KobeCollectionViewCell.swift; sourceTree = "<group>"; };
+		CDDE2F3426B1890400561B37 /* ImageWallViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageWallViewController.swift; sourceTree = "<group>"; };
 		DCE35E2ADAA6F33CF930D75B /* Pods_KrNrImagePicker_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_KrNrImagePicker_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE61960FDD16AB92B8E7E7F0 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		E7070BB93B188CC079C45293 /* Pods_KrNrImagePicker_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_KrNrImagePicker_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -105,6 +109,8 @@
 				607FACD51AFB9204008FA782 /* AppDelegate.swift */,
 				607FACD71AFB9204008FA782 /* ViewController.swift */,
 				607FACD91AFB9204008FA782 /* Main.storyboard */,
+				CDDE2F3426B1890400561B37 /* ImageWallViewController.swift */,
+				CDDE2F3026B187EC00561B37 /* KobeCollectionViewCell.swift */,
 				607FACDC1AFB9204008FA782 /* Images.xcassets */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
 				607FACD31AFB9204008FA782 /* Supporting Files */,
@@ -334,6 +340,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
+				CDDE2F3126B187EC00561B37 /* KobeCollectionViewCell.swift in Sources */,
+				CDDE2F3526B1890400561B37 /* ImageWallViewController.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
