@@ -38,6 +38,15 @@ public class KrNrSlideView: UIView {
             {
                 from = 0
             }
+            
+            let maxIndex = assetsCount - 1
+            let maxFrom = maxIndex - windowSize
+            
+            if(from > maxFrom)
+            {
+                print("orig from value=\(from), changeTo maxFrom=\(maxFrom)")
+                from = maxFrom
+            }
             return from
         }
     }
@@ -50,6 +59,12 @@ public class KrNrSlideView: UIView {
             if to >= assetsCount
             {
                 to = assetsCount - 1
+            }
+            
+            if to < windowSize
+            {
+                print("initWindowLastIndex < windowSize(\(windowSize), setup value to \(windowSize) ")
+                to = windowSize
             }
             return to
         }
@@ -96,6 +111,7 @@ public class KrNrSlideView: UIView {
         
        
         let to = initWindowLastIndex
+        currentWindowLastIndex = to
         self.currentWindowLastIndex = to
         
         let from = initWindowFirstIndex
@@ -135,19 +151,24 @@ public class KrNrSlideView: UIView {
         //move centerIndex to first position
         range = range.filter { $0 != centerIndex}
         range.insert(centerIndex, at: 0)
-        print("request image, range order=\(range)")
+        print("request image, range order=\(range), centerIndex=\(centerIndex)")
        
         
-        let halfSize = windowSize / 2
+        
+        let diff = (centerIndex - initWindowFirstIndex)
         for index in range
         {
+            //hope insert order is asc(0,1,2,3...10)
             let asset = assets[index]
             let view = KrNrZoomScrollView(frame: frame)
             view.tag = index
             
             //scroll item insert into scrollview, index order must be ASC(ex: 0,1,2,3,4,5,6,7,8,9)
             let x = centerIndex - index
-            let p = halfSize - x
+            let p = diff - x
+            
+            print("index=\(index), insert to position=\(p)")
+            
             self.insertScrollItem(item: view, at: p, index: index)
             
             cachImageManager.requestImage(for: asset, targetSize: targetSize, contentMode: .default, options: options, resultHandler: { (image, info) in
@@ -164,22 +185,6 @@ public class KrNrSlideView: UIView {
         scrollView.contentOffset = CGPoint(x: CGFloat(centerIndex)*unitItemSize, y: self.scrollView.contentOffset.y)
         
         print("scrollView each item, unitItemSize=\(unitItemSize), contentSize=\(scrollView.contentSize), contentOffset=\(scrollView.contentOffset)")
-        
-       
-        
-//        for index in range
-//        {
-//            let item = (scrollView.subviews.filter { $0.tag == index }.first!) as! KrNrZoomScrollView
-//
-//            print("filte - tag=\(item.tag)")
-//            let asset = assets[index]
-//            cachImageManager.requestImage(for: asset, targetSize: targetSize, contentMode: .default, options: options, resultHandler: { (image, info) in
-//
-//                item.image = image
-//                print("windos size=\(self.windowSize), prelad data callback to update index=\(index)...size=\(String(describing: image?.size)), id=\(asset.localIdentifier)")
-//
-//            })
-//        }
     }
     
    

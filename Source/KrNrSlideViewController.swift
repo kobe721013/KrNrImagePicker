@@ -39,7 +39,6 @@ class KrNrSlideViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setUpSlideView()
-        self.navigationController?.hidesBarsOnTap = true
         // Do any additional setup after loading the view.
     }
     
