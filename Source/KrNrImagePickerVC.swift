@@ -290,6 +290,13 @@ extension KrNrImagePickerVC : UICollectionViewDelegate, UICollectionViewDelegate
         let section = indexPath.section
         let row = indexPath.row
         
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath) as! KrNrCollectionViewCell
+        
+        let myRect = cell.frame
+        let cellPosition = self.myCollectionView.convert(myRect.origin, to: self.view)
+        print("selected cell frame=\(cell.frame), cellPosition=\(cellPosition)")
+        print("collectionView frame=\(self.myCollectionView.frame)")
+        
         let groupAssets = imageManager.dateGroupAssets
         let keyText = imageManager.sortedDate[section]
         
@@ -306,13 +313,18 @@ extension KrNrImagePickerVC : UICollectionViewDelegate, UICollectionViewDelegate
             return
         }
         
-        let slideVC = KrNrSlideViewController(selected: index)
+        let cellFrame = CGRect(x: cellPosition.x, y: cellPosition.y, width: myRect.size.width, height: myRect.size.height)
+//        let label = UILabel(frame: cellFrame)
+//        label.backgroundColor = .orange
+//        view.addSubview(label)
+//        
+        let slideVC = KrNrSlideViewController(selected: index, selected: cellFrame)
         //slideVC.startIndex = index
         //slideVC.assets = imageManager.serialAssets
         //slideVC.view.backgroundColor = .red
 
         //navigation it
-        self.navigationController?.pushViewController(slideVC, animated: true)
+        self.navigationController?.pushViewController(slideVC, animated: false)
         
     }
     

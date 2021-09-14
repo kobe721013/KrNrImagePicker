@@ -66,15 +66,26 @@ class KrNrZoomScrollView: UIScrollView {
         //print("ZoomScrollView layoutSubviews, scrollview frame=\(frame)")
     }
     
-    func updateFrame(newFrame: CGRect)
+    func updateFrame(newFrame: CGRect, animated: Bool, selected cellFrame:CGRect)
     {
         
         print("scrollView update frame to newFrame=\(newFrame)")
         //更新scrollview的contentSize，因為可能旋轉後，contentSize改變了
         contentSize = newFrame.size
 
-        imageView.frame.size = newFrame.size
-        
+        if(animated)
+        {
+            self.imageView.frame = cellFrame
+            print("view need animated, initFrame=\(cellFrame)")
+            UIView.animate(withDuration: 0.3) {
+                self.imageView.frame = CGRect(x: 0, y: 0, width: newFrame.width, height: newFrame.height)
+            }
+        }
+        else
+        {
+            print("NO need animated")
+            imageView.frame.size = newFrame.size
+        }
     }
 
 }

@@ -13,6 +13,8 @@ import Photos
 
 public class KrNrSlideView: UIView {
 
+    
+    
     private let scrollView:UIScrollView = {
         let sc = UIScrollView(frame: .zero)
         sc.translatesAutoresizingMaskIntoConstraints = false
@@ -21,11 +23,16 @@ public class KrNrSlideView: UIView {
         return sc
     }()
     
-   
-    
     private var assetsCount:Int = 0
     private var cachImageManager:PHCachingImageManager!
     private var assets:[PHAsset]!
+    private var alreadyAnimation = false
+    private var currentWindowLastIndex = 150//41
+    private var windowSize = 10
+    private let sideSpace:CGFloat = 10.0
+    private var draggingStart = false
+    private var selectedCellFrame:CGRect = .zero
+    private var beginDraggingOffset:CGFloat = 0.0
     
     //scroll window parameter
     var centerIndex = 37//31
@@ -70,25 +77,14 @@ public class KrNrSlideView: UIView {
         }
     }
     
-    
-    
-    var currentWindowLastIndex = 150//41
-    
-    var windowSize = 10
-    let sideSpace:CGFloat = 10.0
-    var draggingStart = false
-    
-    
-    var beginDraggingOffset:CGFloat = 0.0
-    //var currentIndex=0
-    
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    init() {
+    init(selected cellFrame:CGRect) {
         //give a zero value, real frame size will update after viewWillLayoytSubviews(call update frame method)
         super.init(frame: CGRect.zero)
+        selectedCellFrame = cellFrame
         cachImageManager = PHCachingImageManager()
         setupScrollView()
     }
@@ -409,6 +405,8 @@ public class KrNrSlideView: UIView {
         
         let currentPage:Int = Int (scrollView.contentOffset.x / scrollView.frame.size.width)
         
+        print("currentPage=\(currentPage)")
+        
         //print("currentPage=\(currentPage), offset=\(scrollView.contentOffset.x), width=\(scrollView.frame.size.width)")
         
         self.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height)
@@ -420,21 +418,11 @@ public class KrNrSlideView: UIView {
         scrollView.frame = CGRect(x: -sideSpace, y: 0, width: scrollViewWidth, height: self.frame.size.height)
         
         
-        
-        
-        
-        //scrollView.backgroundColor = .yellow
         scrollView.contentSize = CGSize(width: scrollViewWidth * CGFloat(assetsCount), height: bounds.size.height)
         scrollView.contentOffset = CGPoint(x: scrollViewWidth * CGFloat(currentPage), y: 0)
         
-        var imageview = scrollView.subviews.first!
-        //print("Before first imageview frame=\(imageview.frame)")
-        imageview.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height)
-        //print("After first imageview frame=\(imageview.frame)")
         
-        imageview = scrollView.subviews.first!
-        //print("CheckAgain first imageview frame=\(imageview.frame)")
-        
+        //update each KrNrZoomScrollView in scrollView
         for view in scrollView.subviews
         {
             if view is KrNrZoomScrollView
@@ -442,10 +430,9 @@ public class KrNrSlideView: UIView {
                 let index = view.tag
                 //這是一個重點，把每一個subview的frame放在以340(5s為例：320螢幕寬+10+10空白)為倍數的數值，再加上一個10的空白處
                 view.frame = CGRect(x: (bounds.width + sideSpace * 2) * CGFloat(index) + sideSpace, y: 0, width: bounds.width, height: bounds.height)
-                //print("index=\(index),  viewFrame=\(view.frame)")
                 
                 //一併把每一個ZoomScrollView裡面的imageView也一併update frame
-                (view as! KrNrZoomScrollView).updateFrame(newFrame: view.frame)
+                (view as! KrNrZoomScrollView).updateFrame(newFrame: view.frame, animated: (currentPage == centerIndex), selected: selectedCellFrame)
             }
         }
         

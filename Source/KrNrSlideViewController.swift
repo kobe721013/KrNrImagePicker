@@ -12,18 +12,20 @@ class KrNrSlideViewController: UIViewController {
     private var krnrSlideView:KrNrSlideView!
     
     private var centerIndex:Int = 0
+    private var selectedCellFrame:CGRect = .zero
     private var bufferSize = 10
     //var assets:[PHAsset]?
     //var cachImageManager:PHCachingImageManager!
     var imageManager:KrNrImageManager
     
-    init(selected centerIndex:Int) {
+    init(selected centerIndex:Int, selected cellFrame:CGRect) {
         self.centerIndex = centerIndex
-
+        self.selectedCellFrame = cellFrame
+        
         imageManager = KrNrImageManager.shared()
         //imageManager.startCachingBigImage(selected: centerIndex, window: bufferSize, options: nil)
        
-        krnrSlideView = KrNrSlideView()
+        krnrSlideView = KrNrSlideView(selected: selectedCellFrame)
         krnrSlideView.startCachingBigImage(serialAssets: imageManager.serialAssets, selected: centerIndex, window: bufferSize, options: nil)
         
         super.init(nibName: nil, bundle: nil)
