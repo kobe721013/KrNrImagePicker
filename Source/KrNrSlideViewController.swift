@@ -39,6 +39,7 @@ class KrNrSlideViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setUpSlideView()
+        automaticallyAdjustsScrollViewInsets = false//!!IMPORTANT!!, subView would not push down or drag down, subView can fixed there.
         // Do any additional setup after loading the view.
     }
     
