@@ -10,7 +10,8 @@ import UIKit
 
 class KrNrZoomScrollView: UIScrollView {
 
-   
+    
+    
     /*
     // Only override draw() if you perform custom drawing.
     // An empty implementation adversely affects performance during animation.
@@ -45,23 +46,24 @@ class KrNrZoomScrollView: UIScrollView {
     
     func setup()
     {
+        self.backgroundColor = .clear//UIColor.yellow.withAlphaComponent(0.3)
         // image
         imageView = UIImageView(frame: frame)
+        imageView.backgroundColor = .green
         imageView.isUserInteractionEnabled = true
         imageView.contentMode = .scaleAspectFit
+        
         addSubview(imageView)
         
-        maximumZoomScale = 4.0
+        maximumZoomScale = 3.0
         minimumZoomScale = 1.0
         zoomScale = 1.0
         
         delegate = self
-        
-        //contentInset = UIEdgeInsets(top: -100 , left: -100, bottom: -100, right: -100)
-        //imageView.frame.size.width = 1000
-        //imageView.frame.size.height = 500
+       
     }
     
+   
     override func layoutSubviews() {
         //print("ZoomScrollView layoutSubviews, scrollview frame=\(frame)")
     }
@@ -69,21 +71,24 @@ class KrNrZoomScrollView: UIScrollView {
     func updateFrame(newFrame: CGRect, animated: Bool, selected cellFrame:CGRect)
     {
         
-        print("scrollView update frame to newFrame=\(newFrame)")
+        //print("scrollView update frame to newFrame=\(newFrame)")
         //更新scrollview的contentSize，因為可能旋轉後，contentSize改變了
         contentSize = newFrame.size
 
         if(animated)
         {
+            //print("image show animated")
             self.imageView.frame = cellFrame
-            print("view need animated, initFrame=\(cellFrame)")
-            UIView.animate(withDuration: 0.3) {
+            
+            //print("view need animated, initFrame=\(cellFrame)")
+            UIView.animate(withDuration: 1.0) {
                 self.imageView.frame = CGRect(x: 0, y: 0, width: newFrame.width, height: newFrame.height)
+               // self.backgroundColor = UIColor.white.withAlphaComponent(1.0)
             }
         }
         else
         {
-            print("NO need animated")
+            //print("NO need animated")
             imageView.frame.size = newFrame.size
         }
     }

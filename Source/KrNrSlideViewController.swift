@@ -29,6 +29,7 @@ class KrNrSlideViewController: UIViewController {
         krnrSlideView.startCachingBigImage(serialAssets: imageManager.serialAssets, selected: centerIndex, window: bufferSize, options: nil)
         
         super.init(nibName: nil, bundle: nil)
+        
     }
     
     //這是從storyboard需要的init
@@ -40,16 +41,19 @@ class KrNrSlideViewController: UIViewController {
     //
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.view.backgroundColor = .clear
+        self.modalPresentationStyle = .custom
         setUpSlideView()
         automaticallyAdjustsScrollViewInsets = false//!!IMPORTANT!!, subView would not push down or drag down, subView can fixed there.
         // Do any additional setup after loading the view.
     }
     
+    //give zero frame when init KrNrSliderView, real frame will update at here.
     override func viewWillLayoutSubviews() {
         
         //print("(ViewController)-viewWillLayoutSubviews: current bound=\(view.bounds)")
         print("viewWillLayoutSubviews, naviBarHeight=\(self.navigationController?.navigationBar.frame.size.height ?? -1)")
-        krnrSlideView.updateFrame(bounds: view.bounds)
+        //krnrSlideView.updateFrame(bounds: view.bounds)
     }
     
     override func viewDidLayoutSubviews() {
@@ -57,7 +61,7 @@ class KrNrSlideViewController: UIViewController {
     }
     
     private func setUpSlideView() {
-        self.view.backgroundColor = #colorLiteral(red: 0.1725490196, green: 0.2431372549, blue: 0.3137254902, alpha: 1)
+        
 
         print("viewDidLoad, naviBarHeight=\(self.navigationController?.navigationBar.frame.size.height ?? -1)")
        
@@ -65,14 +69,6 @@ class KrNrSlideViewController: UIViewController {
         self.view.addSubview(krnrSlideView)
 
     }
-      
-    
-    @objc func handleTap()
-    {
-        print("kobe tap me...")
-        //self.navigationController?.barHideOnTapGestureRecognizer = true
-    }
-    
 
     /*
     // MARK: - Navigation
