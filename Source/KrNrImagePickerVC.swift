@@ -13,6 +13,7 @@ class KrNrImagePickerVC: UIViewController {
     private var imageManager:KrNrImageManager!
     private var assets:[String: [PHAsset]]?
     private var nullCell:KrNrCollectionViewCell?
+    private var gotAssets = true
     var cacheThumbnail:[UIImage] = []
     open override func viewDidLoad() {
         super.viewDidLoad()
@@ -102,7 +103,7 @@ class KrNrImagePickerVC: UIViewController {
         layout.minimumLineSpacing = 2 // 每一行之間的間距
         layout.minimumInteritemSpacing = 1 //每一個cell之間的最小間距，至少是1
         // 設置每個 cell 的尺寸
-        let width = CGFloat(fullScreenSize.width - 6) / 4
+        let width = CGFloat(fullScreenSize.width - 6) / 3
         layout.itemSize = CGSize( width: width,height: width)
         print("fullScreenSize=\(fullScreenSize), item size=\(layout.itemSize)")
         // 設置 header 及 footer 的尺寸，也可以用UICollectionViewDelegateFlowLayout設定
@@ -179,11 +180,24 @@ class KrNrImagePickerVC: UIViewController {
 extension KrNrImagePickerVC : KrNrImageManagerDelegate
 {
     func assetsPrepareCompleted(_ assets: [String : [PHAsset]]) {
-        self.assets = assets
         
-        print("assetsPrepareCompleted, reload collection view")
-        //got phasset, reload view again
-        self.myCollectionView.reloadData()
+       
+        self.assets = assets
+        //Notes:
+        //if permission got before, process go through here first
+        //if lunch app first time, permission not yet got , process go through collectionview delegate first.
+        
+        if(gotAssets == false)
+        {
+            print("collectionview check gotAssets EQUAL false, reload data again")
+            //FOR first permission got, collectionView delegate callback alreadu passed
+            //reloadData again
+            DispatchQueue.main.async {
+                //got phasset, reload view again
+                self.myCollectionView.reloadData()
+            }
+        }
+        
     }
     
 }
@@ -192,7 +206,15 @@ extension KrNrImagePickerVC : UICollectionViewDataSource
 {
     func numberOfSections(in collectionView: UICollectionView) -> Int
     {
-        return assets?.keys.count ?? 0
+        guard let _assets = assets else
+        {
+            print("collectionDelegate-numberOfSections, assets is nil")
+            gotAssets = false
+            return 0
+        }
+        gotAssets = true
+        return _assets.keys.count
+        
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -201,25 +223,22 @@ extension KrNrImagePickerVC : UICollectionViewDataSource
         return count
     }
     
-    func getAssetThumbnail(asset: PHAsset, size: CGSize, cell:KrNrCollectionViewCell) -> UIImage {
+    func getAssetThumbnail(asset: PHAsset, size: CGSize, cell:KrNrCollectionViewCell) {
         let manager = PHImageManager.default()
         let option = PHImageRequestOptions()
         option.version = .original
         option.resizeMode = .exact
         option.deliveryMode = .highQualityFormat
         //option.isSynchronous = true
-        var thumbnail = UIImage()
+        //var thumbnail = UIImage()
         //option.isSynchronous = true
         manager.requestImage(for: asset, targetSize: size, contentMode: .default, options: option, resultHandler: {(result, info)->Void in
-            
-           //print("thumbnail size=\(result?.size)")
-            thumbnail = result!
 
             //DispatchQueue.main.async {
                 cell.imageView.image = result
             //}
         })
-        return thumbnail
+        //return thumbnail
     }
     
     
@@ -239,14 +258,20 @@ extension KrNrImagePickerVC : UICollectionViewDataSource
         // 設置 cell 內容 (即自定義元件裡 增加的圖片與文字元件)
         cell.index = imageManager.serialAssets.index(of: asset)!
         cell.titleLabel.text = "\(cell.index)"
-        //cell.imageView.image =
+        cell.asset = asset
+        cell.imageManager = imageManager
+        cell.reloadContents()
         
-        //DispatchQueue.global(qos: .background).async {
-            self.getAssetThumbnail(asset: asset, size: CGSize(width: 150.0, height: 150.0), cell: cell)//UIImage(named: "web_maintenance.jpg")
-        //}
+        
+        print("index=\(cell.index), assetID=\(asset.localIdentifier), GET CELL")
+        
+        
+       
+        //self.getAssetThumbnail(asset: asset, size: CGSize(width: 150.0, height: 150.0), cell: cell)
+        
         
 
-        //print("get cell Index=\(cell.index)")
+        
         return cell
     }
     

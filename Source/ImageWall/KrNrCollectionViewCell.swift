@@ -6,9 +6,35 @@
 //
 
 import UIKit
-
+import Photos
 class KrNrCollectionViewCell: UICollectionViewCell {
     
+    //
+    var imageManager:PHCachingImageManager!
+    fileprivate var shouldUpdateImage = false
+    private var currentRequest: PHImageRequestID?
+    internal var imageSize: CGSize = CGSize(width: 100, height: 100) {
+        didSet {
+            guard self.imageSize != oldValue else {
+                return
+            }
+            self.shouldUpdateImage = true
+        }
+    }
+    
+    internal var asset: PHAsset? {
+        didSet {
+            //self.metadataView.asset = self.asset
+            guard self.asset != oldValue || self.imageView.image == nil else {
+                return
+            }
+            self.accessibilityLabel = asset?.accessibilityLabel
+            self.shouldUpdateImage = true
+        }
+    }
+    
+    
+    //
     var index = 0
     let titleLabel: UILabel = {
         let label = UILabel()
@@ -63,5 +89,89 @@ class KrNrCollectionViewCell: UICollectionViewCell {
         //imageView使用frame佈局，或使用上面的autoLayout佈局
         //imageView.frame = CGRect(x: 0, y: 0, width: contentView.frame.size.width, height: contentView.frame.size.height)
     }
+    
+    //
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        
+        self.imageView.image = nil
+        
+        if let currentRequest = self.currentRequest {
+            let imageManager = self.imageManager ?? PHImageManager.default()
+            
+            print("prepareForReuse, CANCEL requestImage, ID=\(currentRequest)")
+            imageManager.cancelImageRequest(currentRequest)
+        }
+
+    }
+    
+    internal func reloadContents() {
+        guard self.shouldUpdateImage else {
+            return
+        }
+        self.shouldUpdateImage = false
+        
+        // Set the correct checkmark color
+        //self.iconView.tintColor = self.colors?.checkMark ?? self.colors?.link
+        
+        self.startLoadingImage()
+    }
+    
+    fileprivate func startLoadingImage() {
+        self.imageView.image = nil
+        guard let asset = self.asset else {
+            return
+        }
+        let imageManager = self.imageManager ?? PHImageManager.default()
+        
+        let requestOptions = PHImageRequestOptions()
+        requestOptions.resizeMode = .fast//PHImageRequestOptionsResizeMode.fast
+        requestOptions.isSynchronous = false
+        
+        self.imageView.contentMode = UIView.ContentMode.center
+        self.imageView.image = nil
+        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+            autoreleasepool {
+                let scale = UIScreen.main.scale > 2 ? 2 : UIScreen.main.scale
+                guard let targetSize = self?.imageSize.scaled(with: scale), self?.asset?.localIdentifier == asset.localIdentifier else {
+                    print("!!!! ID asset NOT MATCH !!!!, assetID=\(self?.asset?.localIdentifier ?? "NO ID" ), assetID2=\(asset.localIdentifier)")
+                    return
+                }
+                
+                print("REQUEST IMageSIze=\(targetSize)")
+                self?.currentRequest = imageManager.requestImage(for: asset, targetSize: targetSize, contentMode: .aspectFill, options: requestOptions) { (image, _) in
+                    DispatchQueue.main.async {
+                        autoreleasepool {
+                            guard let image = image, self?.asset?.localIdentifier == asset.localIdentifier else {
+                                print("requestImageCALLBACK, ID NOT MATCH, assetID=\(self?.asset?.localIdentifier ?? "NO ID"), assetID2=\(asset.localIdentifier)")
+                                return
+                            }
+                            
+                            print("CallBack return image SIZE=\(image.size)")
+                            self?.imageView.contentMode = .scaleAspectFill
+                            self?.imageView.image = image
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    func reloadContent()
+    {
+        let image = UIImage(named: "web_maintenance")
+        self.imageView.image = image
+    }
+    
+    //
 
 }
+
+extension CGSize {
+    
+    internal func scaled(with scale: CGFloat) -> CGSize {
+        return CGSize(width: self.width * scale, height: self.height * scale)
+    }
+}
+
