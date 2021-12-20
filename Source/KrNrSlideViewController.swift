@@ -51,19 +51,19 @@ class KrNrSlideViewController: UIViewController {
     //give zero frame when init KrNrSliderView, real frame will update at here.
     override func viewWillLayoutSubviews() {
         
-        //print("(ViewController)-viewWillLayoutSubviews: current bound=\(view.bounds)")
-        print("viewWillLayoutSubviews, naviBarHeight=\(self.navigationController?.navigationBar.frame.size.height ?? -1)")
+        //KrNrLog.track("(ViewController)-viewWillLayoutSubviews: current bound=\(view.bounds)")
+        KrNrLog.track("viewWillLayoutSubviews, naviBarHeight=\(self.navigationController?.navigationBar.frame.size.height ?? -1)")
         //krnrSlideView.updateFrame(bounds: view.bounds)
     }
     
     override func viewDidLayoutSubviews() {
-        print("viewDidLayoutSubviews, naviBarHeight=\(self.navigationController?.navigationBar.frame.size.height ?? -1)")
+        KrNrLog.track("viewDidLayoutSubviews, naviBarHeight=\(self.navigationController?.navigationBar.frame.size.height ?? -1)")
     }
     
     private func setUpSlideView() {
         
 
-        print("viewDidLoad, naviBarHeight=\(self.navigationController?.navigationBar.frame.size.height ?? -1)")
+        KrNrLog.track("viewDidLoad, naviBarHeight=\(self.navigationController?.navigationBar.frame.size.height ?? -1)")
        
         self.krnrSlideView.loadImageToView()
         self.view.addSubview(krnrSlideView)

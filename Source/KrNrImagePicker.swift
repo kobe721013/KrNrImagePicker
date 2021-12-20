@@ -31,13 +31,12 @@ open class KrNrImagePicker: UINavigationController {
     }
     
     deinit {
-            print("Picker deinited 👍")
+            KrNrLog.track("Picker deinited 👍")
     }
         
     
     open override func viewDidLoad()
     {
-        print("viewDidLoad IN \(self)")
         super.viewDidLoad()
         viewControllers = [picker]
         navigationBar.isTranslucent = true//!!IMPORTANT!!, view will extends to full screen, not under navigation bar
@@ -54,7 +53,7 @@ open class KrNrImagePicker: UINavigationController {
 
 //    open override func viewWillLayoutSubviews() {
 //
-//        print("(ViewController)-viewWillLayoutSubviews: current bound=\(view.bounds)")
+//        KrNrLog.track("(ViewController)-viewWillLayoutSubviews: current bound=\(view.bounds)")
 //        krnrSlideView.updateFrame(bounds: view.bounds)
 //    }
     

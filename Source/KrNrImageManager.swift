@@ -73,7 +73,7 @@ class KrNrImageManager : PHCachingImageManager
             //if object.mediaType == .image {
                 //self.localPhotos.append(object)
                 let key = dateFormatter.string(from: asset.creationDate!)
-                //print("key=\(key)")
+                //KrNrLog.track("key=\(key)")
             
             if(self.dateGroupAssets.keys.contains(key) == false)
             {
@@ -87,7 +87,7 @@ class KrNrImageManager : PHCachingImageManager
             //
         })
         
-        print("serialAssets count=\(serialAssets.count)")
+        KrNrLog.track("fetch ALL assets count=\(serialAssets.count)")
         //callback
         delegate?.assetsPrepareCompleted(dateGroupAssets)
     }
@@ -97,7 +97,7 @@ class KrNrImageManager : PHCachingImageManager
 //        let assetsCount = serialAssets.count
 //        self.bufferSize = bufferSize
 //        
-//        print("centerIndex=\(centerIndex), bufferSize=\(bufferSize), assetsCOumt=\(assetsCount)")
+//        KrNrLog.track("centerIndex=\(centerIndex), bufferSize=\(bufferSize), assetsCOumt=\(assetsCount)")
 //        from = centerIndex - bufferSize / 2
 //        if from < 0
 //        {
@@ -109,7 +109,7 @@ class KrNrImageManager : PHCachingImageManager
 //            to = assetsCount - 1
 //        }
 //        
-//        print("startCachingBigImage, from(\(from)) ~ to(\(to))")
+//        KrNrLog.track("startCachingBigImage, from(\(from)) ~ to(\(to))")
 //        var waitAssets = [PHAsset]()
 //        //waitAssets.append(serialAssets[centerIndex])
 //        for i in from...to

@@ -38,7 +38,9 @@ class KrNrCollectionViewCell: UICollectionViewCell {
     var index = 0
     let titleLabel: UILabel = {
         let label = UILabel()
-        label.backgroundColor = .systemPink
+        label.textColor = .white
+        label.backgroundColor = UIColor.init(red: 0, green: 0, blue: 0, alpha: 0.5)
+        label.textAlignment = .right
         return label
     }()
 
@@ -99,7 +101,7 @@ class KrNrCollectionViewCell: UICollectionViewCell {
         if let currentRequest = self.currentRequest {
             let imageManager = self.imageManager ?? PHImageManager.default()
             
-            print("prepareForReuse, CANCEL requestImage, ID=\(currentRequest)")
+            //print("prepareForReuse, CANCEL requestImage, ID=\(currentRequest)")
             imageManager.cancelImageRequest(currentRequest)
         }
 
@@ -134,20 +136,20 @@ class KrNrCollectionViewCell: UICollectionViewCell {
             autoreleasepool {
                 let scale = UIScreen.main.scale > 2 ? 2 : UIScreen.main.scale
                 guard let targetSize = self?.imageSize.scaled(with: scale), self?.asset?.localIdentifier == asset.localIdentifier else {
-                    print("!!!! ID asset NOT MATCH !!!!, assetID=\(self?.asset?.localIdentifier ?? "NO ID" ), assetID2=\(asset.localIdentifier)")
+                    //print("!!!! ID asset NOT MATCH !!!!, assetID=\(self?.asset?.localIdentifier ?? "NO ID" ), assetID2=\(asset.localIdentifier)")
                     return
                 }
                 
-                print("REQUEST IMageSIze=\(targetSize)")
+                //print("REQUEST IMageSIze=\(targetSize)")
                 self?.currentRequest = imageManager.requestImage(for: asset, targetSize: targetSize, contentMode: .aspectFill, options: requestOptions) { (image, _) in
                     DispatchQueue.main.async {
                         autoreleasepool {
                             guard let image = image, self?.asset?.localIdentifier == asset.localIdentifier else {
-                                print("requestImageCALLBACK, ID NOT MATCH, assetID=\(self?.asset?.localIdentifier ?? "NO ID"), assetID2=\(asset.localIdentifier)")
+                                //print("requestImageCALLBACK, ID NOT MATCH, assetID=\(self?.asset?.localIdentifier ?? "NO ID"), assetID2=\(asset.localIdentifier)")
                                 return
                             }
                             
-                            print("CallBack return image SIZE=\(image.size)")
+                            //print("CallBack return image SIZE=\(image.size)")
                             self?.imageView.contentMode = .scaleAspectFill
                             self?.imageView.image = image
                         }
