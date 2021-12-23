@@ -1,0 +1,16 @@
+PODS:
+  - KrNrImagePicker (0.0.2)
+
+DEPENDENCIES:
+  - KrNrImagePicker (from `../`)
+
+EXTERNAL SOURCES:
+  KrNrImagePicker:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  KrNrImagePicker: ea6981286d0315a9e5520083eb81a328871728a0
+
+PODFILE CHECKSUM: 8ed061db1e939f3cf7393674b34533718384455f
+
+COCOAPODS: 1.10.1
