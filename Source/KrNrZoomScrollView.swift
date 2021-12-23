@@ -17,7 +17,8 @@ class KrNrZoomScrollView: UIScrollView {
     var imageManager:PHCachingImageManager?
     fileprivate var shouldUpdateImage = false
     private var currentRequest: PHImageRequestID?
-    
+    private var loadAssetDone = false
+    private var animateDone = false
     private var videoView:VideoView = {
         let videoview = VideoView()
         videoview.translatesAutoresizingMaskIntoConstraints = false
@@ -26,12 +27,14 @@ class KrNrZoomScrollView: UIScrollView {
         return videoview
     }()
     
-    private let playButton:UIButton = {
+    public let playButton:UIButton = {
         let button = UIButton()
+        //button.alpha = 0.5
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.backgroundColor = UIColor(red: 150, green: 150, blue: 150, alpha: 0.5)
-        button.setTitle("Play", for: .normal)
-        //button.isHidden = true
+        button.backgroundColor = UIColor(red: 100, green: 100, blue: 100, alpha: 0.5)
+        button.setImage(UIImage(named: "play-button"), for: .normal)
+        //button.setTitle("Play", for: .normal)
+        button.isHidden = true
         //button.frame = CGRect(x: 100, y: 100, width: 100, height: 100)
         //button.layer.cornerRadius = 0.5 * button.bounds.size.width
         button.clipsToBounds = true
@@ -67,22 +70,22 @@ class KrNrZoomScrollView: UIScrollView {
             return
         }
         
-        let buttonText = sender.title(for: .normal)
-        KrNrLog.track("\(buttonText!) button clicked...hasCurrentItem=\(videoView.hasPlayItem)")
-        if(buttonText == "Pause")
-        {
-            videoView.pause()
-            self.playButton.setTitle("Play", for: .normal)
-            return
-        }
-        
-        
-        if(videoView.hasPlayItem)
-        {
-            self.playButton.setTitle("Pause", for: .normal)
-            videoView.play()
-            return
-        }
+//        let buttonText = sender.title(for: .normal)
+//        KrNrLog.track("\(buttonText!) button clicked...hasCurrentItem=\(videoView.hasPlayItem)")
+//        if(buttonText == "Pause")
+//        {
+//            videoView.pause()
+//            self.playButton.setTitle("Play", for: .normal)
+//            return
+//        }
+//        
+//        
+//        if(videoView.hasPlayItem)
+//        {
+//            self.playButton.setTitle("Pause", for: .normal)
+//            videoView.play()
+//            return
+//        }
         PHCachingImageManager().requestAVAsset(forVideo: ass as PHAsset, options:nil, resultHandler: { (asset, audioMix, info) in
          
                   let strArr = ((info! as NSDictionary).object(forKey:"PHImageFileSandboxExtensionTokenKey") as! NSString).components(separatedBy:";")
@@ -91,30 +94,48 @@ class KrNrZoomScrollView: UIScrollView {
          
                  print(url)
                 
-                
+//===================Play In view
+//                DispatchQueue.main.async {
+//
+//                    let url = URL(fileURLWithPath: url)
+//                    self.videoView.play(with: url)
+//                    self.playButton.setTitle("Pause", for: .normal)
+//
+//                }
+//
+//===================
+            let player = AVPlayer(url: URL(fileURLWithPath: url))
+            let playerController = AVPlayerViewController()
             
-                DispatchQueue.main.async {
-                   
-                    let url = URL(fileURLWithPath: url)
-                    self.videoView.play(with: url)
-                    self.playButton.setTitle("Pause", for: .normal)
-                
-                }
-                
+            playerController.player = player
             
-//            let player = AVPlayer(url: URL(fileURLWithPath: url))
-//            let playerController = AVPlayerViewController()
-//            playerController.player = player
+            let parentVC = UIViewController.getLastPresentedViewController()
+            KrNrLog.track("parentVC=\(type(of: parentVC!))")
+            
+            
 //                if var topController = UIApplication.shared.keyWindow?.rootViewController {
 //                    while let presentedViewController = topController.presentedViewController {
 //                        topController = presentedViewController
 //
-//                        DispatchQueue.main.async {
-//                            topController.present(playerController, animated: false, completion: {
-//                                player.play()
-//                                topController.view.subviews
-//                            })
-//                        }
+//                        KrNrLog.track("topController CLASS=\(type(of: topController) )")
+                       // if topController is KrNrImagePickerVC
+                      //  {
+                            KrNrLog.track("GOT IT......")
+                            DispatchQueue.main.async {
+                                
+                                parentVC!.present(playerController, animated: false, completion: {
+                                    player.play()
+                                    let views = parentVC!.view.subviews
+//
+                                   // KrNrLog.track("topController class=\(type(of: topController))")
+                                    for item in views
+                                    {
+                                        KrNrLog.track("class=\(type(of: item))")
+                                    }
+                            
+                                })
+                            }
+                      //  }
 //                    }
 //                    // topController should now be your topmost view controller
 //                }
@@ -167,8 +188,8 @@ class KrNrZoomScrollView: UIScrollView {
     
     func prepareForReuse() {
         
-        self.imageView.image = nil
-        
+        imageView.image = nil
+        playButton.isHidden = true
         if let currentRequest = self.currentRequest {
             let imageManager = self.imageManager ?? PHImageManager.default()
             
@@ -202,7 +223,7 @@ class KrNrZoomScrollView: UIScrollView {
         let newFrame = CGRect(x: 0, y: 0, width: frame.width, height: frame.height)
         
         super.init(frame: newFrame)
-        KrNrLog.track("ZoomScrollView init(), newFrame=\(newFrame)")
+        //KrNrLog.track("ZoomScrollView init(), newFrame=\(newFrame)")
         setup()
     }
     
@@ -215,7 +236,7 @@ class KrNrZoomScrollView: UIScrollView {
         
         playButton.layer.cornerRadius = playButton.bounds.midX
         playButton.alpha = 0.5
-        KrNrLog.track("playButton.layer.cornerRadius=\(playButton.layer.cornerRadius)")
+        //KrNrLog.track("playButton.layer.cornerRadius=\(playButton.layer.cornerRadius)")
     }
     
     func setup()
@@ -227,6 +248,7 @@ class KrNrZoomScrollView: UIScrollView {
         //imageView.backgroundColor = .green
         imageView.isUserInteractionEnabled = true
         imageView.contentMode = .scaleAspectFit
+        imageView.backgroundColor = UIColor.yellow
         
         addSubview(imageView)
 
@@ -240,26 +262,22 @@ class KrNrZoomScrollView: UIScrollView {
         videoView.centerYAnchor.constraint(equalTo: self.centerYAnchor).isActive = true
         
         //play button
-        videoView.addSubview(playButton)
-        playButton.frame.origin = CGPoint(x: self.bounds.width / 2, y: self.bounds.height / 2)
+        addSubview(playButton)
+        //self.addSubview(playButton)
+        //playButton.frame.origin = CGPoint(x: self.bounds.width / 2, y: self.bounds.height / 2)
         KrNrLog.track("playbutton.frame=\(playButton.frame)")
-        playButton.widthAnchor.constraint(equalToConstant: 100).isActive = true
-        playButton.heightAnchor.constraint(equalToConstant: 100).isActive = true
-        playButton.centerXAnchor.constraint(equalTo: videoView.centerXAnchor).isActive = true
-        playButton.centerYAnchor.constraint(equalTo: videoView.centerYAnchor).isActive = true
+        playButton.widthAnchor.constraint(equalTo: self.widthAnchor, multiplier: 0.2).isActive = true
+        playButton.heightAnchor.constraint(equalTo: self.widthAnchor, multiplier: 0.2).isActive = true
+        //playButton.widthAnchor.constraint(equalToConstant: 100).isActive = true
+        //playButton.heightAnchor.constraint(equalToConstant: 100).isActive = true
+        playButton.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
+        playButton.centerYAnchor.constraint(equalTo: self.centerYAnchor).isActive = true
         
         
 //        NSLayoutConstraint(item: playButton, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 200.0).isActive = true
 //        NSLayoutConstraint(item: playButton, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 100.0).isActive = true
 
 
-
-        
-       
-
-    
-        
-        
         maximumZoomScale = 3.0
         minimumZoomScale = 1.0
         zoomScale = 1.0
@@ -271,6 +289,7 @@ class KrNrZoomScrollView: UIScrollView {
    
     override func layoutSubviews() {
         //KrNrLog.track("ZoomScrollView layoutSubviews, scrollview frame=\(frame)")
+        
     }
     
     func updateFrame(newFrame: CGRect, animated: Bool, selected cellFrame:CGRect)
@@ -282,14 +301,38 @@ class KrNrZoomScrollView: UIScrollView {
 
         if(animated)
         {
-            //KrNrLog.track("image show animated")
+            KrNrLog.track("start animate, playButton frame=\(playButton.frame)")
             self.imageView.frame = cellFrame
+            //self.playButton.frame = CGRect(x: self.imageView.frame.midX, y: self.imageView.frame.midY, width: self.imageView.frame.width * 0.2, height: self.imageView.frame.width * 0.2)
+            
+            
             
             //KrNrLog.track("view need animated, initFrame=\(cellFrame)")
-            UIView.animate(withDuration: 1.0) {
-                self.imageView.frame = CGRect(x: 0, y: 0, width: newFrame.width, height: newFrame.height)
-               // self.backgroundColor = UIColor.white.withAlphaComponent(1.0)
-            }
+//            UIView.animate(withDuration: 0.3) {
+//                self.imageView.frame = CGRect(x: 0, y: 0, width: newFrame.width, height: newFrame.height)
+//               // self.backgroundColor = UIColor.white.withAlphaComponent(1.0)
+//            }
+//
+//            DispatchQueue.global().async {
+//                Thread.sleep(forTimeInterval: 10)
+//                DispatchQueue.main.async {
+                    KrNrLog.track("before animate playButton frame=\(self.playButton.frame)")
+                    KrNrLog.track("before animate imageView frame=\(self.imageView.frame)")
+                    UIView.animate(withDuration: 0.3, animations: {
+                        self.imageView.frame = CGRect(x: 0, y: 0, width: newFrame.width, height: newFrame.height)
+                        //self.playButton.frame = CGRect(x: self.imageView.frame.midX, y: self.imageView.frame.midY, width: self.imageView.frame.width * 0.2, height: self.imageView.frame.width * 0.2)
+
+                        KrNrLog.track("final animate playButton frame=\(self.playButton.frame)")
+                        KrNrLog.track("final animate imageView frame=\(self.imageView.frame)")
+                    }) { (status) in
+                        if(self.loadAssetDone == true)
+                        {
+                            self.playButton.isHidden = (self.asset?.mediaType == .image)
+                        }
+                    }
+//                }
+//            }
+            
         }
         else
         {
@@ -314,7 +357,7 @@ class KrNrZoomScrollView: UIScrollView {
         
         
         
-        KrNrLog.track("Load Big Image/Video. media type=\(asset.mediaType.rawValue)")
+        //KrNrLog.track("Load Big Image/Video. media type=\(asset.mediaType.rawValue)")
         let imageManager = self.imageManager ?? PHImageManager.default()
         
         let requestOptions = PHImageRequestOptions()
@@ -342,11 +385,11 @@ class KrNrZoomScrollView: UIScrollView {
                             
                             //KrNrLog.track("CallBack return image SIZE=\(image.size)")
                             //self?.imageView.contentMode = .scaleAspectFill
-                            self?.imageView.image = image
-                            self?.imageView.isHidden = (asset.mediaType == .image) ? false : true
-                            self?.videoView.isHidden = (asset.mediaType == .image) ? true : false
-                            //self?.playButton.isHidden = (asset.mediaType == .image) ? true : false
-                            KrNrLog.track("playButton frame=\(self?.playButton.frame)")
+                            self?.imageView.image = UIImage(named: "play-button")//image
+                            //self?.imageView.isHidden = (asset.mediaType == .image) ? false : true
+                            //self?.videoView.isHidden = (asset.mediaType == .image) ? true : false
+                            self?.playButton.isHidden = (asset.mediaType == .image) ? true : false
+                            
                         }
                     }
                 }
@@ -414,3 +457,30 @@ extension KrNrZoomScrollView : UIScrollViewDelegate
     
 }
 
+extension UIViewController {
+    static func getLastPresentedViewController() -> UIViewController? {
+            //let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate
+            let window = UIApplication.shared.keyWindow
+        
+            var presentedViewController = window?.rootViewController
+            KrNrLog.track("rootVC=\(type(of: presentedViewController!))")
+            while presentedViewController?.presentedViewController != nil {
+                presentedViewController = presentedViewController?.presentedViewController
+                if presentedViewController is KrNrImagePicker
+                {
+                    let vcs = (presentedViewController as! KrNrImagePicker).viewControllers
+                    for vc in vcs
+                    {
+                        if vc is KrNrImagePickerVC
+                        {
+                            KrNrLog.track("got KrNrImagePickerVC")
+                            return vc
+                        }
+                    }
+                }
+                
+                //KrNrLog.track("presentedViewController=\(type(of: presentedViewController!))")
+            }
+            return nil
+        }
+    }

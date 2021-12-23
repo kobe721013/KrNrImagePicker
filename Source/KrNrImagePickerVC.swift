@@ -452,45 +452,25 @@ extension KrNrImagePickerVC : UICollectionViewDelegate, UICollectionViewDelegate
 //======
         KrNrLog.track("FIRST selected cell frame=\(cellFrame)")
         krnrSlideView = KrNrSlideView(selected: cellFrame)
-        krnrSlideView?.slideDelegate = self
-        krnrSlideView!.startCachingBigImage(serialAssets: imageManager.serialAssets, selected: index, window: 20, options: nil)
+        guard let krnrsliderview = krnrSlideView else {
+            KrNrLog.track("!!!ERROR!!!...krnrSlideView is Nil")
+            return
+        }
+        krnrsliderview.slideDelegate = self
+        krnrsliderview.startCachingBigImage(serialAssets: imageManager.serialAssets, selected: index, window: 20, options: nil)
         
-        krnrSlideView!.loadImageToView()
-        let currentWindow: UIWindow? = UIApplication.shared.keyWindow
-        currentWindow?.addSubview(krnrSlideView!)
+        krnrsliderview.loadImageToView()
+        view.addSubview(krnrsliderview)
+        //let currentWindow: UIWindow? = UIApplication.shared.keyWindow
+        //currentWindow?.addSubview(krnrSlideView!)
         
         
         //KrNrLog.track("view.bounds=\(view.bounds)")
-        krnrSlideView!.updateFrame(bounds: view.bounds, tappedIndex: i!)
+        krnrsliderview.updateFrame(bounds: view.bounds, tappedIndex: i!)
         
         //讓選中的cell反白，跟照片app一樣
         nullCell = targetCell
         nullCell!.imageView.isHidden = true
-        
-//        let cells = collectionView.visibleCells
-//        var idx=[Int]()
-//        for cell in cells
-//        {
-//            idx.append((cell as! KrNrCollectionViewCell).index)
-//        }
-        
-//        //如果此cell是在可見cells中的第一張or最後一張，就把該cell滾動到螢幕中間。避免使用者馬上滑動下一張或上一張時，
-//        //在slideTo function中，下一張或上一張會因為找不到cell位置而出錯。
-//        if(idx.first! == index || idx.last == index)
-//        {
-//            KrNrLog.track("selcted cell index=\(index), the cell is last or first, scroll it to center.")
-//            collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: false)
-//
-//            let(cellframe, targetcell) = cellPositionOnScreen(at: indexPath, in: collectionView)
-//            guard let cellFrame = cellframe else
-//            {
-//                KrNrLog.track("error, get cell fail")
-//                return
-//            }
-//
-//            KrNrLog.track("new selected cell frame=\(cellFrame)")
-//            krnrSlideView?.currentCellFrame = cellFrame
-//        }
         
     }
     
