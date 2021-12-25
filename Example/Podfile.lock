@@ -1,5 +1,5 @@
 PODS:
-  - KrNrImagePicker (0.0.12)
+  - KrNrImagePicker (0.0.13)
 
 DEPENDENCIES:
   - KrNrImagePicker (from `../`)
@@ -9,8 +9,8 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  KrNrImagePicker: 6344915ca7de41db972fc0ae208803a9980930e1
+  KrNrImagePicker: ae54a96371f3c06c5b04f53923e56823950a93f0
 
 PODFILE CHECKSUM: 8ed061db1e939f3cf7393674b34533718384455f
 
-COCOAPODS: 1.10.1
+COCOAPODS: 1.11.2
