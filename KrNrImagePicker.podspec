@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'KrNrImagePicker'
-  s.version          = '0.0.7'
+  s.version          = '0.0.8'
   s.summary          = 'A short description of KrNrImagePicker.'
 
 # This description is used to generate tags and improve search results.
@@ -30,7 +30,7 @@ TODO: Add long description of the pod here.
 
   s.ios.deployment_target = '9.0'
 
-  s.source_files = 'Sources/**/*'
+  s.source_files = 'Source/**/*'
   
   #s.resource_bundles = {
   #   'KrNrImagePicker' => ['KrNrImagePicker/Assets/*.xcassets']
