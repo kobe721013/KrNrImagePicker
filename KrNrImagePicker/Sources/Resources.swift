@@ -9,9 +9,9 @@ import Foundation
 
 public class Resources {
     public static var podBundle: Bundle {
-        let path = Bundle(for: self).resourcePath! + "/PodTestResources.bundle"
+        let path = Bundle(for: self).resourcePath! + "/KrNrImagePicker.bundle"
         
-        print("PodTestResources bundle PATH=\(path)")
+        //print("KrNrImagePicker.bundle PATH=\(path)")
         return Bundle(path: path)!
     }
     

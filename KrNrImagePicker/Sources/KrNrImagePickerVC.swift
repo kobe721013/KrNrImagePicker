@@ -7,6 +7,7 @@
 
 import UIKit
 import Photos
+
 class KrNrImagePickerVC: UIViewController {
 
     private var krnrSlideView:KrNrSlideView?
@@ -17,102 +18,21 @@ class KrNrImagePickerVC: UIViewController {
     private var currentPage = 0
     private var rotateTriggerUpdateFrame = false
     
-    var cacheThumbnail:[UIImage] = []
-    open override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        imageManager = KrNrImageManager.shared()
-        imageManager.delegate = self
-        //setUpUI()
-        self.title = "KrNrImagePicker"
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Close", style: .plain, target: self, action: #selector(closeButtonClick))
-        // Do any additional setup after loading the view.
-        
-        setupCollectionView()
-
-        permissionCheck()
-        
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        //KrNrLog.track("(\(#function)]")
-        //let cells = myCollectionView.visibleCells
-        //KrNrLog.track("visibleCells count=\(cells.count)")
-    }
-    
-    private func permissionCheck()
-    {
-        //permission
-        //get permission
-        let status = PHPhotoLibrary.authorizationStatus()
-        KrNrLog.track("check PHOTO permission status=\(status)")
-        if status == .notDetermined  {
-            
-            PHPhotoLibrary.requestAuthorization({status in
-                KrNrLog.track("AFTER requestAuthorization. status=\(status.rawValue)")
-                if(status == .authorized)
-                {
-                    self.imageManager.fetchAllPhassets()
-                }
-                else{
-                    //not allow permission
-                    KrNrLog.track("user NOT allow PHOTO permission")
-                }
-                
-            })
-        }
-        else if status != .authorized
-        {
-            let alertController = UIAlertController (title: "EasyBackup想訪問您的照片", message: "需樣訪問您的照片並且上傳", preferredStyle: .alert)
-                        
-                        
-            let settingsAction = UIAlertAction(title: "允許訪問所有照片", style: .default) { (_) -> Void in
-                            
-                guard let settingsUrl = URL(string: UIApplicationOpenSettingsURLString) else {
-                    return
-                }
-                if UIApplication.shared.canOpenURL(settingsUrl) {
-                                
-                    if #available(iOS 10.0, *) {
-                        UIApplication.shared.open(settingsUrl, completionHandler: { (success) in
-                            KrNrLog.track("Settings opened: \(success)") // KrNrLog.tracks true
-                        })
-                    } else {
-                        KrNrLog.track("below ios 10.0, nothing can do.....")
-                    }
-                }
-                        
-            }
-                        
-            alertController.addAction(settingsAction)
-            let cancelAction = UIAlertAction(title: "關閉", style: .cancel, handler: nil)
-            alertController.addAction(cancelAction)
-            present(alertController, animated: true, completion: nil)
-            
-        }
-        else{
-            KrNrLog.track("Permission authorized Before")
-            self.imageManager.fetchAllPhassets()
-        }
-    }
-    
     let myCollectionView: UICollectionView = {
 
         //setup collection layout
         let fullScreenSize = UIScreen.main.bounds.size
         let layout = UICollectionViewFlowLayout()
         layout.sectionInset = UIEdgeInsetsMake(0, 0, 0, 0);
-        // 設置每一行的間距
-        layout.minimumLineSpacing = 2 // 每一行之間的間距
-        layout.minimumInteritemSpacing = 1 //每一個cell之間的最小間距，至少是1
-        // 設置每個 cell 的尺寸
+        // line spaceing
+        layout.minimumLineSpacing = 2 // each line spacing
+        layout.minimumInteritemSpacing = 1 //spacing between cells
+        // cell size
         let width = CGFloat(fullScreenSize.width - 6) / 3
         layout.itemSize = CGSize( width: width,height: width)
-        KrNrLog.track("fullScreenSize=\(fullScreenSize), cell size=\(layout.itemSize)")
-        // 設置 header 及 footer 的尺寸，也可以用UICollectionViewDelegateFlowLayout設定
+        KrNrLog.track("Device FullScreenSize=\(fullScreenSize), CollectionView cell size=\(layout.itemSize)")
+        // header size
         layout.headerReferenceSize = CGSize(width: fullScreenSize.width, height: 40)
-        //layout.footerReferenceSize = CGSize(
-        //  width: fullScreenSize.width, height: 40)
         
         
         
@@ -133,9 +53,29 @@ class KrNrImagePickerVC: UIViewController {
         return collectionview
     }()
     
+    open override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        self.title = "KrrN"
+        imageManager = KrNrImageManager.shared()
+        imageManager.delegate = self
+        
+        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Close", style: .plain, target: self, action: #selector(closeButtonClick))
+        // Do any additional setup after loading the view.
+        
+        setupCollectionView()
+        permissionCheck()
+        
+    }
+    
+    @objc private func closeButtonClick(_ button: UIButton) {
+        self.dismiss(animated: true, completion: nil)
+    }
+    
     private func setupCollectionView()
     {
-        // 設置委任對象
+        // setup delegate
         myCollectionView.delegate = self
         myCollectionView.dataSource = self
 
@@ -152,18 +92,72 @@ class KrNrImagePickerVC: UIViewController {
         
     }
     
-   
-    @objc private func closeButtonClick(_ button: UIButton) {
-        self.dismiss(animated: true, completion: nil)
+    private func permissionCheck()
+    {
+        //get permission
+        let status = PHPhotoLibrary.authorizationStatus()
+        
+        KrNrLog.track("check PHOTO permission status=\(status)")
+        if status == .notDetermined
+        {
+            //maybe first time to ask permission
+            PHPhotoLibrary.requestAuthorization({status in
+                KrNrLog.track("requestAuthorization. status=\(status.rawValue)")
+                if(status == .authorized)
+                {
+                    self.imageManager.fetchAllPhassets()
+                }
+                else
+                {
+                    //not allow permission
+                    KrNrLog.track("user NOT allow PHOTO permission")
+                }
+                
+            })
+        }
+        else if status != .authorized
+        {
+            let alertController = UIAlertController (title: "Access your photos?", message: "Need to access your media", preferredStyle: .alert)
+                        
+                        
+            let settingsAction = UIAlertAction(title: "Allow to access all photos?", style: .default) { (_) -> Void in
+                            
+                guard let settingsUrl = URL(string: UIApplicationOpenSettingsURLString) else {
+                    return
+                }
+                if UIApplication.shared.canOpenURL(settingsUrl) {
+                                
+                    if #available(iOS 10.0, *)
+                    {
+                        UIApplication.shared.open(settingsUrl, completionHandler: { (success) in
+                            KrNrLog.track("Settings opened: \(success)") // KrNrLog.tracks true
+                        })
+                    } else {
+                        KrNrLog.track("below ios 10.0, nothing can do.....")
+                    }
+                }
+                        
+            }
+                        
+            alertController.addAction(settingsAction)
+            let cancelAction = UIAlertAction(title: "Close", style: .cancel, handler: nil)
+            alertController.addAction(cancelAction)
+            present(alertController, animated: true, completion: nil)
+            
+        }
+        else
+        {
+            KrNrLog.track("Permission authorized BEFORE")
+            self.imageManager.fetchAllPhassets()
+        }
     }
-
     
     open override func viewWillLayoutSubviews() {
         if let sliderview = krnrSlideView
         {
             if view.bounds.size != sliderview.currentBounds
             {
-                KrNrLog.track("Screen rotate, update sliderView frame to \(view.bounds)")
+                KrNrLog.track("Screen ROTATE, update sliderView frame to \(view.bounds)")
                 sliderview.updateFrame(bounds: view.bounds, tappedIndex: -1)
                 rotateTriggerUpdateFrame = true
                 KrNrLog.track("sliderView updateFrames done. collectionView frame= \(myCollectionView.frame)")
@@ -172,7 +166,6 @@ class KrNrImagePickerVC: UIViewController {
     }
     
     override func viewDidLayoutSubviews() {
-        KrNrLog.track("Current collectionView frame= \(myCollectionView.frame)")
         
         if(rotateTriggerUpdateFrame)
         {
@@ -181,9 +174,10 @@ class KrNrImagePickerVC: UIViewController {
                 KrNrLog.track("!!! ERROR !!!, get sliderview page is nil")
                 return
             }
-            //如果立馬執行，在找cell position，還會停留在上一個狀態(假設原本直轉橫向)，找到的cell position還會是在直向的位置
+            
             DispatchQueue.global().async {
                 sleep(UInt32(1.0))
+                //如果立馬執行，在找cell position，還會停留在上一個狀態(假設原本直轉橫向)，找到的cell position還會是在直向的位置.所以sleep一會兒。
                 DispatchQueue.main.async {
                     self.findCellPosition(for: page)
                 }
@@ -211,11 +205,11 @@ extension KrNrImagePickerVC : KrNrImageManagerDelegate
         self.assets = assets
         //Notes:
         //gotAssets的目的是希望collectionView那邊再layout時，發現assets是nil，表示
-        //數據還沒拿到，那到了assetsPrepareCompleted這一步，數據確定拿到了
-        //重新reload collectionView一次
+        //數據還沒拿到，所以collectionView呈現出來是空白的。
+        //所以當，assetsPrepareCompleted這一步完成後，表示數據確定拿到了
+        //那就重新reload collectionView一次，這樣collectionView就會出現照片
         if(gotAssets == false)
         {
-            //FOR first permission got, collectionView delegate callback already passed
             //reloadData again
             DispatchQueue.main.async {
                 KrNrLog.track("got assets NOW, reload collectionView AGAIN")
@@ -249,68 +243,31 @@ extension KrNrImagePickerVC : UICollectionViewDataSource
         return count
     }
     
-    func getAssetThumbnail(asset: PHAsset, size: CGSize, cell:KrNrCollectionViewCell) {
-        let manager = PHImageManager.default()
-        let option = PHImageRequestOptions()
-        option.version = .original
-        option.resizeMode = .exact
-        option.deliveryMode = .highQualityFormat
-        //option.isSynchronous = true
-        //var thumbnail = UIImage()
-        //option.isSynchronous = true
-        manager.requestImage(for: asset, targetSize: size, contentMode: .default, options: option, resultHandler: {(result, info)->Void in
-
-            //DispatchQueue.main.async {
-                cell.imageView.image = result
-            //}
-        })
-        //return thumbnail
-    }
-    
-    
-    
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        // 依據前面註冊設置的識別名稱 "Cell" 取得目前使用的 cell
+        // reuse 'cell'
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath) as! KrNrCollectionViewCell
 
         let section = indexPath.section
         let row = indexPath.row
         
         let keyString = imageManager.sortedDate[section]
-        //KrNrLog.track("(\(section),\(row), key=\(keyString)")
         
         let asset = imageManager.dateGroupAssets[keyString]![row]
         
-        // 設置 cell 內容 (即自定義元件裡 增加的圖片與文字元件)
-        cell.index = imageManager.serialAssets.index(of: asset)!
         
+        cell.index = imageManager.serialAssets.index(of: asset)!
         cell.titleLabel.isHidden = (asset.mediaType == .image)
         if(asset.mediaType == .video)
         {
+            //show video duration
             cell.titleLabel.text = asset.duration.toHumanFormat()
         }
-        else
-        {
-            //
-        }
-        
-        
-        
-        //cell.titleLabel.backgroundColor = (asset.mediaType == .video) ? .lightGray : .systemPink
         cell.asset = asset
         cell.imageManager = imageManager
         cell.reloadContents()
         
         
-        KrNrLog.track("index=\(cell.index), assetID=\(asset.localIdentifier), GET CELL")
-        
-        
-       
-        //self.getAssetThumbnail(asset: asset, size: CGSize(width: 150.0, height: 150.0), cell: cell)
-        
-        
-
-        
+        //KrNrLog.track("index=\(cell.index), assetID=\(asset.localIdentifier), GET CELL")
         return cell
     }
     
@@ -321,12 +278,13 @@ extension KrNrImagePickerVC : UICollectionViewDataSource
         // 建立 UICollectionReusableView
         var reusableView = UICollectionReusableView()
 
-        // 顯示文字
+        // show section text. (date string)
         let label = UILabel(frame: CGRect(
         x: 0, y: 0,
         width: collectionView.contentSize.width, height: 40))
-        label.textAlignment = .center
-        label.backgroundColor = .yellow
+        label.textAlignment = .left
+        //label.backgroundColor = UIColor(red: 1.0, green: 1.0, blue: 115.0/255.0, alpha: 1.0)
+        label.font = UIFont(name: "HelveticaNeue-Bold", size: 17.0)
 
         
         // header
@@ -340,11 +298,20 @@ extension KrNrImagePickerVC : UICollectionViewDataSource
                     ofKind: UICollectionElementKindSectionHeader,
                     withReuseIdentifier: "Header",
                     for: indexPath)
-            // 設置 header 的內容
-            reusableView.backgroundColor = .red
-            label.text = headerText;
-            label.textColor = .blue
-            reusableView.addSubview(label)
+            
+            if let lbl = reusableView.subviews.first as? UILabel
+            {
+                // 設置 header 的內容
+                lbl.text = headerText;
+                lbl.textColor = .purple
+            }
+            else
+            {
+                label.text = headerText;
+                label.textColor = .purple
+                reusableView.addSubview(label)
+            }
+            
         } else if kind == UICollectionElementKindSectionFooter {
             //KrNrLog.track("Footer")
             // 依據前面註冊設置的識別名稱 "Footer" 取得目前使用的 footer
@@ -355,16 +322,12 @@ extension KrNrImagePickerVC : UICollectionViewDataSource
                     for: indexPath)
             // 設置 footer 的內容
             reusableView.backgroundColor = .brown
+            //size is ZERO, hidden it
             reusableView.frame.size = CGSize(width: 0.0, height: 0.0)
-            //label.text = "Footer";
-            //label.textColor = .darkText
         }
 
-        
         return reusableView
     }
-    
-   
 }
 
 extension KrNrImagePickerVC : UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate
@@ -375,13 +338,6 @@ extension KrNrImagePickerVC : UICollectionViewDelegate, UICollectionViewDelegate
     {
         return CGSize(width: view.frame.width, height: 40)
     }
-    
-    
-//    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView)
-//    {
-//        let count = myCollectionView.visibleCells.count
-//        KrNrLog.track("collectionView Scroll..END.visibleCells(\(count))")
-//    }
     
     func cellPositionOnScreen(at indexPath:IndexPath, in collectionView: UICollectionView) -> (CGRect?, KrNrCollectionViewCell?)
     {
@@ -429,27 +385,6 @@ extension KrNrImagePickerVC : UICollectionViewDelegate, UICollectionViewDelegate
         }
         KrNrLog.track("selected CELL asset, index=\(index)")
         
-//        let cellFrame = CGRect(x: cellPosition.x, y: cellPosition.y, width: myRect.size.width, height: myRect.size.height)
-        
-        
-//        let label = UILabel(frame: cellFrame)
-//        label.backgroundColor = .orange
-//        view.addSubview(label)
-//
-        
-//        let slideVC = KrNrSlideViewController(selected: index, selected: cellFrame)
-//        //present it
-//        slideVC.view.backgroundColor = UIColor(red: 255, green: 0, blue: 0, alpha: 0.3)
-//        let navigationController = UINavigationController(rootViewController: slideVC)
-//        self.present(navigationController, animated: false, completion: nil)
-
-//======
-        
-//        //navigation it
-//        self.navigationController?.pushViewController(slideVC, animated: false)
-//
-        
-//======
         KrNrLog.track("FIRST selected cell frame=\(cellFrame)")
         krnrSlideView = KrNrSlideView(selected: cellFrame)
         guard let krnrsliderview = krnrSlideView else {
@@ -459,8 +394,10 @@ extension KrNrImagePickerVC : UICollectionViewDelegate, UICollectionViewDelegate
         krnrsliderview.slideDelegate = self
         krnrsliderview.startCachingBigImage(serialAssets: imageManager.serialAssets, selected: index, window: 20, options: nil)
         
-        krnrsliderview.loadImageToView()
-        view.addSubview(krnrsliderview)
+        //krnrsliderview.loadImageToView()
+        //要把這一個view加在navigationController.view裡面，才會是滿版的sliderview，
+        //否則，view依舊會在navigationBar底下，導致krnrsliderview客制的navigationBarView會看不到，被遮住了。
+        self.navigationController?.view.addSubview(krnrsliderview)
         //let currentWindow: UIWindow? = UIApplication.shared.keyWindow
         //currentWindow?.addSubview(krnrSlideView!)
         
@@ -558,6 +495,10 @@ extension KrNrImagePickerVC:KrNrSlideViewDelegate
         }
     }
     
+    /*
+     * function: findCellPosition.
+     * purpose:  find cell position ON screen. when BIG image drag down, the big image will change to small size and the animation will look like the big image embeded into collectionView'cell.
+     */
     func findCellPosition(for currentPage:Int)
     {
         KrNrLog.track("myCollectionView.frame=\(myCollectionView.frame),currentPage=\(currentPage)")
@@ -569,44 +510,51 @@ extension KrNrImagePickerVC:KrNrSlideViewDelegate
         {
             index.append((cell as! KrNrCollectionViewCell).index)
         }
-        KrNrLog.track("visibleCells ID=\(index.sorted())")
+        index = index.sorted()
+        KrNrLog.track("visibleCells ID=\(index)")
         
         //找出大圖目前在collectionview上面的cell
         targetcell = cells.first(where: { ($0 as! KrNrCollectionViewCell).index ==  currentPage}) as? KrNrCollectionViewCell
         
         guard let targetCell = targetcell else {
             KrNrLog.track("cant FIND targetCell")
+            if let max = index.max()
+            {
+                let p = myCollectionView.contentOffset
+                var rect = CGRect(x: p.x, y: p.y, width: myCollectionView.frame.width, height: myCollectionView.frame.height)
+                
+                KrNrLog.track("currentPage=\(currentPage), max=\(max)....contentOffset=\(p)")
+                if currentPage > max
+                {
+                    rect.origin.y += myCollectionView.frame.height
+                }
+                else
+                {
+                    rect.origin.y -= myCollectionView.frame.height
+                }
+                KrNrLog.track("scroll to rect=\(rect)")
+                
+                myCollectionView.scrollRectToVisible(rect, animated: false)
+                DispatchQueue.global().async {
+                    sleep(UInt32(1.0))
+                    DispatchQueue.main.async {
+                        self.findCellPosition(for: currentPage)
+                    }
+                }
+            }
             return
         }
         
-        //KrNrLog.track("targetCell frame=\(targetCell.frame), index=\(targetCell.index)")
-        
-        //找到cell後，找出他的section AND row
-//        let indexpath = myCollectionView.indexPath(for: targetCell)
-//        guard let indexPath = indexpath else
-//        {
-//            KrNrLog.track("error...Callback slide page, can not find cell indexPath on collectionview")
-//            return
-//        }
-        //let cell = myCollectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath) as! KrNrCollectionViewCell
-        
+        //把之前imageview隱藏的cell重新顯示
         if let nullcell = self.nullCell
         {
             nullcell.imageView.isHidden = false
         }
         
+        //把目前的target cell的imagevie隱藏起來，做出一個跟photo APP一樣的效果
+        //好像collectionview 上被挖一個洞一樣
         nullCell = targetCell
         targetCell.imageView.isHidden = true
-        //KrNrLog.track("path=\(path)")
-        
-        //var myRect = targetCell.frame
-        //var cellPosition = self.myCollectionView.convert(myRect.origin, to: self.view)
-        //KrNrLog.track("cellPosition=\(cellPosition), scroll it")
-        
-        
-        //透過section AND row, scroll item to top
-        //myCollectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: false)
-        
         
         //scroll後，算出目前cell的位置
         let myRect = targetCell.frame

@@ -28,6 +28,7 @@
                                     <constraint firstAttribute="width" constant="100" id="HyT-14-C5M"/>
                                     <constraint firstAttribute="height" constant="100" id="IWB-oz-zgc"/>
                                 </constraints>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleTitle2"/>
                                 <state key="normal" title="Add"/>
                                 <connections>
                                     <action selector="addImage:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="iWp-Vj-ofK"/>

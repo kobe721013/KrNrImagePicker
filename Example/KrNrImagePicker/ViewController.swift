@@ -11,12 +11,18 @@ import KrNrImagePicker
 import Photos
 class ViewController: UIViewController {
 
-   private var krnrSlideView:KrNrSlideView!
-    
+  
+    var shouldUpdateImage = true
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        animateTest()
+        guard self.shouldUpdateImage else {
+            print("1")
+            return
+        }
+        
+        print("2")
+//        animateTest()
 //        var dict = [String: [Int]]()
 //        dict["111"] = [Int]()
 //        dict["111"]?.append(1)
@@ -29,24 +35,24 @@ class ViewController: UIViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         
-        print("viewDidAppear --- button frame=\(button.frame)")
-        print("viewDidAppear --- imageview frame=\(imageView.frame)")
-        
-        DispatchQueue.global().async {
-            Thread.sleep(forTimeInterval: 5)
-            DispatchQueue.main.async {
-                UIView.animate(withDuration: 5.0) {
-                    self.imageView.frame = self.view.bounds
-                    self.imageView.alpha = 1.0
-                    self.button.frame = CGRect(x: self.imageView.frame.midX, y: self.imageView.frame.midY, width: self.view.bounds.width * 0.2, height: self.view.bounds.height * 0.2)//CGRect(x: 128, y: 252, width: 64, height: 64)
-                } completion: { (status) in
-                   print("animate DONE")
-                    print("viewDidAppear --- button frame=\(self.button.frame)")
-                    print("viewDidAppear --- imageview frame=\(self.imageView.frame)")
-                    self.imageView.isHidden = true
-                }
-            }
-        }
+//        print("viewDidAppear --- button frame=\(button.frame)")
+//        print("viewDidAppear --- imageview frame=\(imageView.frame)")
+//
+//        DispatchQueue.global().async {
+//            Thread.sleep(forTimeInterval: 5)
+//            DispatchQueue.main.async {
+//                UIView.animate(withDuration: 5.0) {
+//                    self.imageView.frame = self.view.bounds
+//                    self.imageView.alpha = 1.0
+//                    self.button.frame = CGRect(x: self.imageView.frame.midX, y: self.imageView.frame.midY, width: self.view.bounds.width * 0.2, height: self.view.bounds.height * 0.2)//CGRect(x: 128, y: 252, width: 64, height: 64)
+//                } completion: { (status) in
+//                   print("animate DONE")
+//                    print("viewDidAppear --- button frame=\(self.button.frame)")
+//                    print("viewDidAppear --- imageview frame=\(self.imageView.frame)")
+//                    self.imageView.isHidden = true
+//                }
+//            }
+//        }
         
 
     }

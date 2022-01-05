@@ -9,21 +9,21 @@
 import UIKit
 import Photos
 
-public protocol KrNrSlideViewDelegate
+internal protocol KrNrSlideViewDelegate
 {
     func slideTo(currentPage:Int, duplicatedCheck: Bool)
     func imageDisappearComplete()
     
 }
 
-public class KrNrSlideView: UIView {
+internal class KrNrSlideView: UIView {
 
     /*private variable*/
     private var assetsCount:Int = 0
     private var cachImageManager:PHCachingImageManager!
     private var assets:[PHAsset]!
     private var alreadyAnimation = false
-    private var currentWindowLastIndex = 150//41
+    private let zoomRate:CGFloat = 3.0
     
     private var windowSize = 30
     private let sideSpace:CGFloat = 10.0
@@ -38,6 +38,8 @@ public class KrNrSlideView: UIView {
     private var portritConstraints:[NSLayoutConstraint]!
     private var landscapeConstraints:[NSLayoutConstraint]!
     private var centerIndex = 37//31
+    private var slideCount = 0
+    private var xyRatio:CGFloat = 0.0
     /*public variable*/
     public var currentBounds:CGSize!
     public var delegate:KrNrSlideViewDelegate?
@@ -48,14 +50,16 @@ public class KrNrSlideView: UIView {
     
     private let scrollView:UIScrollView = {
         let sc = UIScrollView(frame: .zero)
-        //sc.translatesAutoresizingMaskIntoConstraints = false
         sc.isPagingEnabled = true
         sc.showsHorizontalScrollIndicator = false
         return sc
     }()
     
     
-    
+    /*
+     * 自己製作NavigationBar，目的是為了能控制當大圖向下拖曳時，NavigationBar也能慢慢隱形
+     * 效果就跟photoApp類似，所以才客製化自己的NavigationBar
+     */
     private let navigationBar:UINavigationBar = {
         
         let bar = UINavigationBar()
@@ -73,12 +77,14 @@ public class KrNrSlideView: UIView {
         
         bar.isTranslucent = true
         bar.setBackgroundImage(UIImage(), for: .default)
-        //bar.shadowImage = UIImage()
-        //bar.backgroundColor = UIColor(red: 255.0, green: 0.0, blue: 0.0, alpha: 0.0)
         
         return bar
     }()
     
+    /*
+     * 自己製作NavigationBar，目的是為了能控制當大圖向下拖曳時，NavigationBar也能慢慢隱形
+     * 效果就跟photoApp類似。navigationBarView是一個Container。
+     */
     private let navigationBarView:UIView = {
         
         let view = UIView()
@@ -89,43 +95,6 @@ public class KrNrSlideView: UIView {
         
     }()
     
-    private func addNavigationBarConstraints()
-    {
-        navigationBarView.addSubview(navigationBar)// add(navigationBar)
-        
-        //portitt
-        //NSLayoutConstraint(item: bar, attribute: .top, relatedBy: .equal, toItem: view, attribute: .top, multiplier: 1.0, constant: 0).isActive = true
-        let p1 = NSLayoutConstraint(item: navigationBar, attribute: .leading, relatedBy: .equal, toItem: navigationBarView, attribute: .leading, multiplier: 1.0, constant: 0.0)//.isActive = true
-        let p2 = NSLayoutConstraint(item: navigationBar, attribute: .trailing, relatedBy: .equal, toItem: navigationBarView, attribute: .trailing, multiplier: 1.0, constant: 0.0)//.isActive = true
-        let p3 = NSLayoutConstraint(item: navigationBar, attribute: .bottom, relatedBy: .equal, toItem: navigationBarView, attribute: .bottom, multiplier: 1.0, constant: 0.0)//.isActive = true
-        
-        let p4 =  navigationBar.heightAnchor.constraint(equalToConstant: 44)
-        
-       
-        
-        self.addSubview(navigationBarView)
-        
-        let p5 = NSLayoutConstraint(item: navigationBarView, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 0.0)
-    
-        let p6 = NSLayoutConstraint(item: navigationBarView, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 1.0)
-        let p7 = NSLayoutConstraint(item: navigationBarView, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 1.0)
-        
-        let p8 = navigationBarView.heightAnchor.constraint(equalToConstant: 64)
-        
-        let contraints = [p1,p2,p3,p4,p5,p6,p7,p8]
-        portritConstraints = [p4,p8]
-        
-        NSLayoutConstraint.activate(contraints)
-        
-        
-        //Lanscape
-        let l1 =  navigationBar.heightAnchor.constraint(equalToConstant: 32)
-        let l2 = navigationBarView.heightAnchor.constraint(equalToConstant: 32)
-        
-        landscapeConstraints = [l1, l2]
-    }
-    
-   
     
     @objc func doneButtonClick()
     {
@@ -180,6 +149,9 @@ public class KrNrSlideView: UIView {
         }
     }
     
+    /*
+     * currentPage指的是畫面靜止狀態下，直接用contentOffset.x / width的結果
+     */
     var currentPage:Int
     {
         get
@@ -197,12 +169,10 @@ public class KrNrSlideView: UIView {
     init(selected cellFrame:CGRect) {
         //give a zero frame, real frame size will update after viewWillLayoytSubviews(call update frame method)
         super.init(frame: CGRect.zero)
-        self.backgroundColor = UIColor.white.withAlphaComponent(1.0)//UIColor(red: 255.0, green: 255.0, blue: 255.0, alpha: 0.0)
+        self.backgroundColor = UIColor.white.withAlphaComponent(1.0)
+        cachImageManager = KrNrImageManager.shared()//PHCachingImageManager()
         currentCellFrame = cellFrame
-        //KrNrLog.track("selectedCellFrame=\(selectedCellFrame)")
-        cachImageManager = PHCachingImageManager()
         setupScrollView()
-        //setupNavigationBar()
         addNavigationBarConstraints()
     }
    
@@ -214,29 +184,68 @@ public class KrNrSlideView: UIView {
         scrollView.delegate = self
         self.addSubview(scrollView)
         
-        //pan
-        
+        // add PanGesture
          let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(panGestureAction(_:)))
-        //panGestureRecognizer.delegate = self
         self.addGestureRecognizer(panGestureRecognizer)
     }
     
-    func setupNavigationBar()
+    private func addNavigationBarConstraints()
     {
+        navigationBarView.addSubview(navigationBar)// add(navigationBar)
+        
+        //portitt Constraints
+        let p1 = NSLayoutConstraint(item: navigationBar, attribute: .leading, relatedBy: .equal, toItem: navigationBarView, attribute: .leading, multiplier: 1.0, constant: 0.0)//.isActive = true
+        let p2 = NSLayoutConstraint(item: navigationBar, attribute: .trailing, relatedBy: .equal, toItem: navigationBarView, attribute: .trailing, multiplier: 1.0, constant: 0.0)//.isActive = true
+        let p3 = NSLayoutConstraint(item: navigationBar, attribute: .bottom, relatedBy: .equal, toItem: navigationBarView, attribute: .bottom, multiplier: 1.0, constant: 0.0)//.isActive = true
+        
+        let p4 =  navigationBar.heightAnchor.constraint(equalToConstant: 44)
+        
+       
+        
         self.addSubview(navigationBarView)
         
-        NSLayoutConstraint(item: navigationBarView, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 0.0).isActive = true
+        let p5 = NSLayoutConstraint(item: navigationBarView, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 0.0)
     
-        NSLayoutConstraint(item: navigationBarView, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 1.0).isActive = true
-        NSLayoutConstraint(item: navigationBarView, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 1.0).isActive = true
+        let p6 = NSLayoutConstraint(item: navigationBarView, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 1.0)
+        let p7 = NSLayoutConstraint(item: navigationBarView, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 1.0)
         
-        navigationBarView.heightAnchor.constraint(equalToConstant: 64).isActive = true
+        let p8 = navigationBarView.heightAnchor.constraint(equalToConstant: 64)
+        
+        let contraints = [p1,p2,p3,p4,p5,p6,p7,p8]
+        
+        //不管Portrit or Lanscape p1,2,3,5,6,7都一樣，所以p4,p8遇到畫面是Lanscape時，P4,P8就會disable.
+        portritConstraints = [p4,p8]
+        
+        NSLayoutConstraint.activate(contraints)
+        
+        
+        //Lanscape constraints
+        let l1 =  navigationBar.heightAnchor.constraint(equalToConstant: 32)
+        let l2 = navigationBarView.heightAnchor.constraint(equalToConstant: 32)
+        
+        landscapeConstraints = [l1, l2]
     }
     
+    
+//    func setupNavigationBar()
+//    {
+//        self.addSubview(navigationBarView)
+//
+//        NSLayoutConstraint(item: navigationBarView, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 0.0).isActive = true
+//
+//        NSLayoutConstraint(item: navigationBarView, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 1.0).isActive = true
+//        NSLayoutConstraint(item: navigationBarView, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 1.0).isActive = true
+//
+//        navigationBarView.heightAnchor.constraint(equalToConstant: 64).isActive = true
+//    }
+//
+    /*
+     * 算出目前的page是在scrollView裡面的哪一個位置，回傳X軸位置
+     */
     private func pageToFrameX(page:Int) -> CGFloat
     {
         let x = (bounds.size.width + 2.0 * sideSpace) * CGFloat(page)
-        KrNrLog.track("pageToFrameX, page=\(page), x=\(x)")
+        //KrNrLog.track("pageToFrameX, page=\(page), x=\(x)")
         return x
     }
     
@@ -244,7 +253,6 @@ public class KrNrSlideView: UIView {
     @objc func panGestureAction(_ panGesture: UIPanGestureRecognizer) {
         
         let page = currentPage
-        //KrNrLog.track("currentPage=\(page)...")
         
         if let sliderView = scrollView.subviews.filter({ $0.tag == page }).first as? KrNrZoomScrollView
         {
@@ -261,6 +269,8 @@ public class KrNrSlideView: UIView {
                 
                 origXRatio = self.currentPositionTouched!.x / currentBounds.width
                 origYRatio = self.currentPositionTouched!.y / currentBounds.height
+                
+                sliderView.playButton.isHidden = true
                 //KrNrLog.track("begin - originalPosition(subView.center)=\(originalPosition), currentPositionTouched=\(currentPositionTouched), origXRatio=\(origXRatio), origYRatio=\(origYRatio)")
             } else if panGesture.state == .changed {
                 
@@ -324,7 +334,10 @@ public class KrNrSlideView: UIView {
                     subView.contentMode = .scaleAspectFit
                     
                     self.opacityChangedTo(alpha: self.newAlpha, playButton: sliderView.playButton)
-                })
+                }) { (status) in
+                    sliderView.checkPlayButtonHidden()
+                    
+                }
               }
             }
         }
@@ -332,31 +345,26 @@ public class KrNrSlideView: UIView {
     
     private func opacityChangedTo(alpha: CGFloat, playButton:UIButton)
     {
-        self.backgroundColor = UIColor.white.withAlphaComponent(alpha)
-        self.navigationBarView.backgroundColor = UIColor.white.withAlphaComponent(alpha)
+        backgroundColor = UIColor.white.withAlphaComponent(alpha)
+        navigationBarView.backgroundColor = UIColor.white.withAlphaComponent(alpha)
         let textAttributes = [NSAttributedStringKey.foregroundColor:UIColor.red.withAlphaComponent(alpha)]
-        self.navigationBar.titleTextAttributes = textAttributes
-        self.navigationBar.tintColor = UIColor.red.withAlphaComponent(alpha)
-        playButton.backgroundColor = UIColor.black.withAlphaComponent(alpha)
+        navigationBar.titleTextAttributes = textAttributes
+        navigationBar.tintColor = UIColor.red.withAlphaComponent(alpha)
+        
     }
     
-    
-    
-    
+    //user pass assets array, and center index, and a window size, the function will use CachImageManager to request image and load image into ZoomScrollView
     func startCachingBigImage(serialAssets:[PHAsset], selected centerIndex: Int, window bufferSize: Int, options: PHImageRequestOptions?)
     {
-        self.assetsCount = serialAssets.count
-        self.windowSize = bufferSize
+        assetsCount = serialAssets.count
+        windowSize = bufferSize
         self.centerIndex = centerIndex
-        self.assets = serialAssets
+        assets = serialAssets
         
         KrNrLog.track("[\(#function)] => centerIndex=\(centerIndex), bufferSize=\(bufferSize), assetsCount=\(assetsCount)")
         
        
         let to = initWindowLastIndex
-        currentWindowLastIndex = to
-        self.currentWindowLastIndex = to
-        
         let from = initWindowFirstIndex
         
         KrNrLog.track("startCachingBigImage, from(\(from)) ~ to(\(to))")
@@ -372,142 +380,81 @@ public class KrNrSlideView: UIView {
             myoptions!.deliveryMode = .highQualityFormat
         }
 
-        let targetSize = CGSize(width: UIScreen.main.bounds.width*3, height: UIScreen.main.bounds.height*3)//PHImageManagerMaximumSize
-       cachImageManager.startCachingImages(for: waitAssets, targetSize: targetSize, contentMode: .default, options: myoptions)
-    }
-    
-    
-    public func loadImageToView()
-    {
-        let options = PHImageRequestOptions()
-        options.resizeMode = .exact
-        options.deliveryMode = .highQualityFormat
+        let targetSize = CGSize(width: UIScreen.main.bounds.width*zoomRate, height: UIScreen.main.bounds.height*zoomRate)//PHImageManagerMaximumSize
+        cachImageManager.startCachingImages(for: waitAssets, targetSize: targetSize, contentMode: .default, options: myoptions)
         
-
-        
-        var range = Array(initWindowFirstIndex...initWindowLastIndex)
-        let targetSize = CGSize(width: UIScreen.main.bounds.width*3, height: UIScreen.main.bounds.height*3)//PHImageManagerMaximumSize
-
+        //START to load to each ZoomScrollView
+        let range = Array(from...to)
         KrNrLog.track("[\(#function)] => index from (\(range.first!)) ~ (\(range.last!))")
         
-        //move centerIndex to first position
-        range = range.filter { $0 != centerIndex}
-        range.insert(centerIndex, at: 0)
-        KrNrLog.track("request image, range order=\(range), centerIndex=\(centerIndex)")
-        KrNrLog.track("request targetSize=\(targetSize)")
-        
-        //===
-        
-        
-        //===
-        let diff = (centerIndex - initWindowFirstIndex)
+        //add view to scrollview
+        let centerview = KrNrZoomScrollView(frame: frame)
+        centerview.asset = assets[centerIndex]
+        centerview.reloadContents()
+    
         for index in range
         {
-            //hope insert order is asc(0,1,2,3...10)
-            let asset = assets[index]
-            let view = KrNrZoomScrollView(frame: frame)
-            view.tag = index
-            view.asset = asset
-            view.reloadContents()
-            //scroll item insert into scrollview, index order must be ASC(ex: 0,1,2,3,4,5,6,7,8,9)
-            let x = centerIndex - index
-            let p = diff - x
-            
-            //KrNrLog.track("index=\(index), insert to position=\(p)")
-            
-            self.insertScrollItem(item: view, at: p, index: index)
-            
-            
-//            autoreleasepool(invoking: {
-//                cachImageManager.requestImage(for: asset, targetSize: targetSize, contentMode: .default, options: options, resultHandler: { (image, info) in
-//
-//
-//                    view.image = image
-//                    KrNrLog.track("windos size=\(self.windowSize), requestImage callback to update index=\(index)...size=\(String(describing: image?.size)), id=\(asset.localIdentifier), tempImage size=\(MemoryLayout.size(ofValue: image))")
-//
-//                })
-//
-//            })
-            
-           
+            let view:KrNrZoomScrollView
+            if index == centerIndex
+            {
+                view = centerview
+            }
+            else
+            {
+                let asset = assets[index]
+                view = KrNrZoomScrollView(frame: frame)
+                view.asset = asset
+                view.reloadContents()
+            }
+            self.addScrollItemView(item: view, index: index, insertToFirstPosition: false)
         }
-        
+                
         //update scrollview 'contentSIze' & 'contentOffset'
         let unitItemSize = bounds.size.width + sideSpace * 2.0
         scrollView.contentSize = CGSize(width: CGFloat(assetsCount)*unitItemSize, height: scrollView.frame.size.height)
         scrollView.contentOffset = CGPoint(x: CGFloat(centerIndex)*unitItemSize, y: self.scrollView.contentOffset.y)
         
-        KrNrLog.track("sliderView each item, unitItemSize=\(unitItemSize), contentSize=\(scrollView.contentSize), contentOffset=\(scrollView.contentOffset)")
     }
     
-   
-    
-    private func addViewToIndex(view:UIView, index:Int) {
-        
-        //原本有這一行，導致一些zoom scroll view的frame在scroll過程中,都被設置為0
-        //view.translatesAutoresizingMaskIntoConstraints = false
-        
-        
-        
-        
-        scrollView.addSubview(view)
+    //add zoomscrollview to scrollview
+    private func addScrollItemView(item view:UIView, index:Int, insertToFirstPosition:Bool)
+    {
         view.tag = index
         view.frame = CGRect(x: (bounds.width + sideSpace * 2) * CGFloat(index) + sideSpace, y: 0, width: bounds.size.width, height: scrollView.frame.size.height)
         
-        KrNrLog.track("==== now scrollView has views =====")
-        for item in scrollView.subviews
+        if(insertToFirstPosition)
         {
-            KrNrLog.track("index=\(item.tag), frame=\(item.frame)")
+            scrollView.insertSubview(view, at: 0)
         }
-        KrNrLog.track("==== now scrollView has views ===== END")
+        else
+        {
+            scrollView.addSubview(view)
+        }
     }
-    
-    private func insertScrollItem(item view:UIView, at position: Int, index:Int)
-    {
-        scrollView.insertSubview(view, at: position)
-        view.tag = index
-        view.frame = CGRect(x: (bounds.width + sideSpace * 2) * CGFloat(index) + sideSpace, y: 0, width: bounds.size.width, height: scrollView.frame.size.height)
-        
-//        KrNrLog.track("==== now scrollView has views =====")
-//        for item in scrollView.subviews
-//        {
-//            KrNrLog.track("index=\(item.tag), frame=\(item.frame)")
+  
+//    func updateRealImage(for index:Int, on imageView:KrNrZoomScrollView)
+//    {
+//        let options = PHImageRequestOptions()
+//        options.resizeMode = .fast
+//        options.deliveryMode = .highQualityFormat
+//
+//        let targetSize = CGSize(width: UIScreen.main.bounds.width*3, height: UIScreen.main.bounds.height*3)//PHImageManagerMaximumSize
+//
+//        //let imageManager = KrNrImageManager.shared()
+//
+//        autoreleasepool{
+//            cachImageManager.requestImage(for: assets[index], targetSize: targetSize, contentMode: .default, options: options, resultHandler: { (image, info) in
+//
+//                //let asset = self.assets[index]
+//                //KrNrLog.track("update index=\(index) image request done. size=\(image!.size), id=\(asset.localIdentifier)")
+//                imageView.image = image
+//
+//            })
 //        }
-//        KrNrLog.track("==== now scrollView has views ===== END")
-    }
-    
-    //viewEnd
-    var imageIndex = 0
-    
-
-    
-    func updateRealImage(for index:Int, on imageView:KrNrZoomScrollView)
-    {
-        let options = PHImageRequestOptions()
-        options.resizeMode = .fast
-        options.deliveryMode = .highQualityFormat
-            
-        let targetSize = CGSize(width: UIScreen.main.bounds.width*3, height: UIScreen.main.bounds.height*3)//PHImageManagerMaximumSize
-        
-        //let imageManager = KrNrImageManager.shared()
-        
-        autoreleasepool{
-            cachImageManager.requestImage(for: assets[index], targetSize: targetSize, contentMode: .default, options: options, resultHandler: { (image, info) in
-
-                //let asset = self.assets[index]
-                //KrNrLog.track("update index=\(index) image request done. size=\(image!.size), id=\(asset.localIdentifier)")
-                imageView.image = image
-                
-            })
-        }
-    }
+//    }
     
     
-    
-    
-    private var slideCount = 0
-    private var xyRatio:CGFloat = 0.0
-    //ViewWillLayoutSubviews會呼叫這一個function
+    //the ViewWillLayoutSubviews of parent'viewcontroller will call the function
     public func updateFrame(bounds:CGRect, tappedIndex: Int)
     {
         KrNrLog.track("update frame to bounds=\(bounds)")
@@ -527,9 +474,6 @@ public class KrNrSlideView: UIView {
             NSLayoutConstraint.activate(portritConstraints)
             
         }
-        
-        //KrNrLog.track("offsetX=\(scrollView.contentOffset.x), width=\(scrollView.frame.size.width), floatPAGE=\(scrollView.contentOffset.x / scrollView.frame.size.width)")
-        
         //每當要選轉時，原本預期第五頁的圖片，他的offset 應該會是 (ScreenWidth+20)*5
         //在iphoneX ios14.5.1發現，他會先往左shift 44，所以算出來的page會是浮點數，因此用round改取最接近的整數
         let currentPage:Int = Int(round(scrollView.contentOffset.x / scrollView.frame.size.width))
@@ -538,7 +482,6 @@ public class KrNrSlideView: UIView {
        
         
         self.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height)
-        //self.backgroundColor = .red
         
         let scrollViewWidth = self.frame.size.width + (sideSpace * 2)
         //scrollview的frame放在-10位置，bounds width＝320，再多出10的空白，所以其實一個view的長度等於10+320+10=340
@@ -577,7 +520,7 @@ extension KrNrSlideView : UIScrollViewDelegate
         return
     }
 
-    ///回傳目前的page
+    //when user scroll it, the function will check current page must be at center of window, and finally, the function will return current page index.
     func balanceWindow() -> Int
     {
         if(self.scrollView.contentOffset.x > self.beginDraggingOffset)
@@ -599,7 +542,7 @@ extension KrNrSlideView : UIScrollViewDelegate
             //window to RIGHT
             var views = self.scrollView.subviews
             let trashView = views.filter{ ($0 is KrNrZoomScrollView) == false}
-            //先把不知名的view移除
+            //remove unknown view in scrollview first.
             for view in trashView
             {
                 view.removeFromSuperview()
@@ -609,10 +552,10 @@ extension KrNrSlideView : UIScrollViewDelegate
             views = self.scrollView.subviews
             let reuseViews = views.filter{ ($0.tag < min) || ($0.tag > max) }
             var lastViewTag = self.scrollView.subviews.last!.tag
-            KrNrLog.track("===")
+            //KrNrLog.track("===")
             for view in reuseViews
             {
-                KrNrLog.track("reuse tag=\(view.tag)")
+                //KrNrLog.track("reuse tag=\(view.tag)")
                 if((view is KrNrZoomScrollView) == false)
                 {
                     view.removeFromSuperview()
@@ -621,14 +564,14 @@ extension KrNrSlideView : UIScrollViewDelegate
                 lastViewTag = lastViewTag + 1
                 
                 let zoomscrollview = view as! KrNrZoomScrollView
-                self.addViewToIndex(view: zoomscrollview, index: lastViewTag)
+                self.addScrollItemView(item: zoomscrollview, index: lastViewTag, insertToFirstPosition: false)
                 
                 zoomscrollview.imageManager = self.cachImageManager
                 zoomscrollview.asset = assets[lastViewTag]
                 zoomscrollview.prepareForReuse()
                 zoomscrollview.reloadContents()
             }
-            KrNrLog.track("===END")
+            //KrNrLog.track("===END")
             
             return i
             
@@ -650,7 +593,7 @@ extension KrNrSlideView : UIScrollViewDelegate
             }
             min = min < 0 ? 0 : min
             max = max > assets.count ? assets.count : max
-            KrNrLog.track("NOWpage=\(i), offset = \(offset), width=\(self.scrollView.frame.width), min=\(min), max=\(max)")
+            //KrNrLog.track("NOWpage=\(i), offset = \(offset), width=\(self.scrollView.frame.width), min=\(min), max=\(max)")
             //window to LEFT
             var views = self.scrollView.subviews
             let trashView = views.filter{ ($0 is KrNrZoomScrollView) == false}
@@ -661,20 +604,21 @@ extension KrNrSlideView : UIScrollViewDelegate
             views = self.scrollView.subviews
             let reuseViews = views.filter{ ($0.tag < min) || ($0.tag > max) }
             var firstViewTag = self.scrollView.subviews.first!.tag
-            KrNrLog.track("===")
+            //KrNrLog.track("===")
             for view in reuseViews
             {
-                KrNrLog.track("reuse tag=\(view.tag)")
+                //KrNrLog.track("reuse tag=\(view.tag)")
                 firstViewTag = firstViewTag - 1
                 
                 let zoomscrollview = view as! KrNrZoomScrollView
-                self.insertScrollItem(item: zoomscrollview, at: 0, index: firstViewTag)
+                self.addScrollItemView(item: zoomscrollview, index: firstViewTag, insertToFirstPosition: true)
+                
                 zoomscrollview.imageManager = self.cachImageManager
                 zoomscrollview.asset = assets[firstViewTag]
                 zoomscrollview.prepareForReuse()
                 zoomscrollview.reloadContents()
             }
-            KrNrLog.track("===END")
+            //KrNrLog.track("===END")
             return i
         }
          
@@ -683,53 +627,53 @@ extension KrNrSlideView : UIScrollViewDelegate
     //scrolling
     public func scrollViewDidScroll(_ scrollView: UIScrollView)
     {
-
         KrNrLog.track("offset=\(scrollView.contentOffset.x)")
         if draggingStart
-        {}
-        else if(beginDraggingOffset > 0)//避免第一次進來時，由於會設定contentOffset，導致scroll啟動，因此會進來這一個邏輯
         {
+            //when a user scroll normally, not scroll quickly, scrollViewWillBeginDragging will be triggered
+            //and process'logic will 
+            KrNrLog.track("draggingStart, balanceWindow")
+        }
+        else if(beginDraggingOffset > 0)
+        {
+            //避免第一次進來時，由於會設定contentOffset，而導致scroll滾動event觸發，所以用beginDraggingOffset判斷是人為scroll還是因為設定了contentOffset而造成的滾動
             let diffOffset = scrollView.contentOffset.x - beginDraggingOffset
             if(diffOffset <= scrollView.frame.width)
             {
+                //目前滾動的offset還不到一個畫面的寬度，不做任何檢查
                 return
             }
             else
             {
                 //當diifOffset差距大於一個frame寬度時
                 //表示scroll fast所致，所以這邊要balance一下
-                KrNrLog.track("diffOffset=\(diffOffset), call balanceWindow")
+                KrNrLog.track("Scroll quickly~~~~~~~~~~, diffOffset=\(diffOffset), call balanceWindow")
             }
         }
         else
         {
+            //when setting scrollView.contentOffset, process will return from here.
             return
         }
         
         let page = balanceWindow()
         draggingStart = false
         slideDelegate?.slideTo(currentPage: page, duplicatedCheck: true)
-        
-//        KrNrLog.track("===")
-//        for item in scrollView.subviews
+    
+//mark it. play video method changed to present a viewcontroller.
+//        let playingViews = scrollView.subviews.filter({($0 as? KrNrZoomScrollView)?.isPlayingVideo == true})
+//        for item in playingViews
 //        {
-//            KrNrLog.track("type=\(type(of: item))")
+//            let v = item as! KrNrZoomScrollView
+//            KrNrLog.track("playing VIDEO, index=\(v.tag), frame=\(v.frame), STOP it")
+//            v.pauseVideo()
 //        }
-//        KrNrLog.track("===")
-        
-        let playingViews = scrollView.subviews.filter({($0 as? KrNrZoomScrollView)?.isPlayingVideo == true})
-        for item in playingViews
-        {
-            let v = item as! KrNrZoomScrollView
-            KrNrLog.track("playing VIDEO, index=\(v.tag), frame=\(v.frame), STOP it")
-            v.pauseVideo()
-        }
     }
     
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
 
         //KrNrLog.track("scrollViewDidEndDecelerating...contentOffset=\(scrollView.contentOffset)")
-        //當scroll畫面停止下來時，也在更新一次目前停留的張數
+        //當scroll畫面停止下來時，也再更新一次目前停留的張數
         let currentPage:Int = Int (scrollView.contentOffset.x / scrollView.frame.size.width)
         slideDelegate?.slideTo(currentPage: currentPage, duplicatedCheck: true)
         //currentIndex = currentPage

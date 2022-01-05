@@ -65,7 +65,7 @@ class KrNrSlideViewController: UIViewController {
 
         KrNrLog.track("viewDidLoad, naviBarHeight=\(self.navigationController?.navigationBar.frame.size.height ?? -1)")
        
-        self.krnrSlideView.loadImageToView()
+        //self.krnrSlideView.loadImageToView()
         self.view.addSubview(krnrSlideView)
 
     }
