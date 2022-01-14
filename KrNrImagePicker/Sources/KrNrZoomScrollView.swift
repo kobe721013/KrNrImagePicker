@@ -19,6 +19,7 @@ class KrNrZoomScrollView: UIScrollView {
     private var currentRequest: PHImageRequestID?
     private var loadAssetDone = false
     private var animateDone = false
+    private var checked = false
     private var videoView:VideoView = {
         let videoview = VideoView()
         videoview.translatesAutoresizingMaskIntoConstraints = false
@@ -252,7 +253,7 @@ class KrNrZoomScrollView: UIScrollView {
         //imageView.backgroundColor = .green
         imageView.isUserInteractionEnabled = true
         imageView.contentMode = .scaleAspectFit
-        imageView.backgroundColor = UIColor.yellow
+        //imageView.backgroundColor = UIColor.yellow
         
         addSubview(imageView)
 
@@ -270,10 +271,10 @@ class KrNrZoomScrollView: UIScrollView {
         //self.addSubview(playButton)
         //playButton.frame.origin = CGPoint(x: self.bounds.width / 2, y: self.bounds.height / 2)
         KrNrLog.track("playbutton.frame=\(playButton.frame)")
-        playButton.widthAnchor.constraint(equalTo: self.widthAnchor, multiplier: 0.2).isActive = true
-        playButton.heightAnchor.constraint(equalTo: self.widthAnchor, multiplier: 0.2).isActive = true
-        //playButton.widthAnchor.constraint(equalToConstant: 100).isActive = true
-        //playButton.heightAnchor.constraint(equalToConstant: 100).isActive = true
+        //playButton.widthAnchor.constraint(equalTo: self.widthAnchor, multiplier: 0.2).isActive = true
+        //playButton.heightAnchor.constraint(equalTo: self.widthAnchor, multiplier: 0.2).isActive = true
+        playButton.widthAnchor.constraint(equalToConstant: 100).isActive = true
+        playButton.heightAnchor.constraint(equalToConstant: 100).isActive = true
         playButton.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
         playButton.centerYAnchor.constraint(equalTo: self.centerYAnchor).isActive = true
         

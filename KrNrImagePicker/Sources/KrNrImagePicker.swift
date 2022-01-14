@@ -37,6 +37,7 @@ open class KrNrImagePicker: UINavigationController {
         viewControllers = [picker]
         //!!IMPORTANT!!, view will extends to full screen, not under navigation bar
         navigationBar.isTranslucent = true
+        
     }
     
     /*

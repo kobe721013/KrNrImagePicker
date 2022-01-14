@@ -40,11 +40,14 @@ internal class KrNrSlideView: UIView {
     private var centerIndex = 37//31
     private var slideCount = 0
     private var xyRatio:CGFloat = 0.0
+    
     /*public variable*/
     public var currentBounds:CGSize!
     public var delegate:KrNrSlideViewDelegate?
     public var slideDelegate:KrNrSlideViewDelegate?
     public var currentCellFrame:CGRect = .zero
+    public var selectedDelegate:KrNrAssetSelectedDelegate?
+    public var selectedAssets:[Int]!
     //scroll window parameter
     
     
@@ -55,6 +58,49 @@ internal class KrNrSlideView: UIView {
         return sc
     }()
     
+    private var scrollViewFrame:CGRect
+    {
+        set
+        {
+            updateFrameCauseScrolling = true
+            scrollView.frame = newValue
+        }
+        get
+        {
+            return scrollView.frame
+        }
+        
+    }
+    
+    private var scrollViewContentSize:CGSize
+    {
+        set
+        {
+            updateFrameCauseScrolling = true
+            scrollView.contentSize = newValue
+        }
+        get
+        {
+            return scrollView.contentSize
+        }
+        
+    }
+    
+    private var scrollViewContentOffset:CGPoint
+    {
+        set
+        {
+            updateFrameCauseScrolling = true
+            scrollView.contentOffset = newValue
+        }
+        get
+        {
+            return scrollView.contentOffset
+        }
+        
+    }
+  
+  
     
     /*
      * 自己製作NavigationBar，目的是為了能控制當大圖向下拖曳時，NavigationBar也能慢慢隱形
@@ -67,14 +113,32 @@ internal class KrNrSlideView: UIView {
         let navItem = UINavigationItem(title: "KrNr")
         let textAttributes = [NSAttributedStringKey.foregroundColor:UIColor.red.withAlphaComponent(1.0)]
         bar.titleTextAttributes = textAttributes
-       
         bar.tintColor = UIColor.red.withAlphaComponent(1.0)
         
-        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: nil, action: #selector(doneButtonClick))
+       
+        if let image = Resources.podImage(named: "checkbox")
+        {
+            let b = UIButton(type: .custom)
+            //b.tag = 5566
+            b.backgroundColor = .white
+            //b.imageView?.layer.cornerRadius = 20
+            b.translatesAutoresizingMaskIntoConstraints = false
+            b.setImage(image, for: .normal)
+
+            b.widthAnchor.constraint(equalToConstant: 30).isActive = true
+            b.heightAnchor.constraint(equalToConstant: 30).isActive = true
+
+            b.addTarget(self, action: #selector(checkButtonClick), for: .touchUpInside)
+            let checkbutton = UIBarButtonItem(customView: b)
+            navItem.rightBarButtonItem = checkbutton
+        }
         
-        navItem.rightBarButtonItem = doneButton
+
+//  debug for windowBalance(), check current page index
+//        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: nil, action: #selector(doneButtonClick))
+//        navItem.rightBarButtonItem = doneButton
+        
         bar.setItems([navItem], animated: false)
-        
         bar.isTranslucent = true
         bar.setBackgroundImage(UIImage(), for: .default)
         
@@ -88,6 +152,7 @@ internal class KrNrSlideView: UIView {
     private let navigationBarView:UIView = {
         
         let view = UIView()
+        //view.isHidden = true
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = UIColor.white.withAlphaComponent(1.0)
         
@@ -105,6 +170,26 @@ internal class KrNrSlideView: UIView {
             KrNrLog.track("index=\(view.tag), frame=\(view.frame)")
         }
         KrNrLog.track("=====")
+    }
+    
+    
+    @objc func checkButtonClick(_ sender: UIButton)
+    {
+        let page = currentPage
+        
+        if let i = selectedAssets.index(of: page)
+        {
+            sender.backgroundColor = .white
+            selectedAssets.remove(at: i)
+            selectedDelegate?.check(page: page, selected: false)
+        }
+        else
+        {
+            sender.backgroundColor = .green
+            selectedAssets.append(currentPage)
+            selectedDelegate?.check(page: page, selected: true)
+        }
+        
     }
     
     
@@ -156,9 +241,9 @@ internal class KrNrSlideView: UIView {
     {
         get
         {
-            let page = scrollView.contentOffset.x / scrollView.frame.width
-            KrNrLog.track("scrollView.contentOffset.x=\(scrollView.contentOffset.x), scrollView.frame.width=\(scrollView.frame.width)")
-            return Int(page)
+            //四捨五入再取整數
+            let page = Int(round(scrollView.contentOffset.x / scrollView.frame.width))
+            return page
         }
     }
     
@@ -169,6 +254,8 @@ internal class KrNrSlideView: UIView {
     init(selected cellFrame:CGRect) {
         //give a zero frame, real frame size will update after viewWillLayoytSubviews(call update frame method)
         super.init(frame: CGRect.zero)
+        //debug..setup alpha to 0.2 and review collectionview slide status.
+        //self.backgroundColor = UIColor.yellow.withAlphaComponent(0.2)
         self.backgroundColor = UIColor.white.withAlphaComponent(1.0)
         cachImageManager = KrNrImageManager.shared()//PHCachingImageManager()
         currentCellFrame = cellFrame
@@ -185,8 +272,14 @@ internal class KrNrSlideView: UIView {
         self.addSubview(scrollView)
         
         // add PanGesture
-         let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(panGestureAction(_:)))
+        let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(panGestureAction(_:)))
         self.addGestureRecognizer(panGestureRecognizer)
+        
+        // add tap Gesture
+        let scrollViewTap = UITapGestureRecognizer(target: self, action: #selector(viewTapped))
+        self.scrollView.addGestureRecognizer(scrollViewTap)
+        
+        //self.backgroundColor = UIColor.yellow.withAlphaComponent(0.2)
     }
     
     private func addNavigationBarConstraints()
@@ -249,7 +342,13 @@ internal class KrNrSlideView: UIView {
         return x
     }
     
-    
+    @objc func viewTapped(_ tapGesture: UITapGestureRecognizer)
+    {
+        //return
+        KrNrLog.track("tap view.......")
+        navigationBarView.isHidden = !navigationBarView.isHidden
+        self.backgroundColor = navigationBarView.isHidden ? .black : .white
+    }
     @objc func panGestureAction(_ panGesture: UIPanGestureRecognizer) {
         
         let page = currentPage
@@ -276,17 +375,17 @@ internal class KrNrSlideView: UIView {
                 
                 let newHeight = currentBounds.height - translation.y
                 let newWidth = newHeight * xyRatio
-                KrNrLog.track("newHeight=\(newHeight), newWidth=\(newWidth)")
+                //KrNrLog.track("newHeight=\(newHeight), newWidth=\(newWidth)")
                 subView.frame.size = CGSize(width: newWidth, height: newHeight)
                 
                 let fingerPositionX = self.currentPositionTouched!.x + translation.x
                 let fingerPositionY = self.currentPositionTouched!.y + translation.y
-                KrNrLog.track("fingerPosition=(\(fingerPositionX), \(fingerPositionY)")
+                //KrNrLog.track("fingerPosition=(\(fingerPositionX), \(fingerPositionY)")
                 
             
                 subView.frame.origin.x = fingerPositionX - (newWidth * origXRatio)
                 subView.frame.origin.y = fingerPositionY - (newHeight * origYRatio)
-                KrNrLog.track("changeed...frame=\(subView.frame)...alpha=\(newAlpha)")
+                //KrNrLog.track("changeed...frame=\(subView.frame)...alpha=\(newAlpha)")
 
                 
                 //opacity
@@ -351,6 +450,10 @@ internal class KrNrSlideView: UIView {
         navigationBar.titleTextAttributes = textAttributes
         navigationBar.tintColor = UIColor.red.withAlphaComponent(alpha)
         
+        if let button = self.navigationBar.items?.first?.rightBarButtonItem?.customView as? UIButton
+        {
+            button.alpha = alpha
+        }
     }
     
     //user pass assets array, and center index, and a window size, the function will use CachImageManager to request image and load image into ZoomScrollView
@@ -411,8 +514,10 @@ internal class KrNrSlideView: UIView {
                 
         //update scrollview 'contentSIze' & 'contentOffset'
         let unitItemSize = bounds.size.width + sideSpace * 2.0
-        scrollView.contentSize = CGSize(width: CGFloat(assetsCount)*unitItemSize, height: scrollView.frame.size.height)
-        scrollView.contentOffset = CGPoint(x: CGFloat(centerIndex)*unitItemSize, y: self.scrollView.contentOffset.y)
+        scrollViewContentSize = CGSize(width: CGFloat(assetsCount)*unitItemSize, height: scrollView.frame.size.height)
+        scrollViewContentOffset = CGPoint(x: CGFloat(centerIndex)*unitItemSize, y: self.scrollView.contentOffset.y)
+        //scrollView.contentSize = CGSize(width: CGFloat(assetsCount)*unitItemSize, height: scrollView.frame.size.height)
+        //scrollView.contentOffset = CGPoint(x: CGFloat(centerIndex)*unitItemSize, y: self.scrollView.contentOffset.y)
         
     }
     
@@ -453,7 +558,7 @@ internal class KrNrSlideView: UIView {
 //        }
 //    }
     
-    
+    private var updateFrameCauseScrolling = false
     //the ViewWillLayoutSubviews of parent'viewcontroller will call the function
     public func updateFrame(bounds:CGRect, tappedIndex: Int)
     {
@@ -480,16 +585,23 @@ internal class KrNrSlideView: UIView {
         KrNrLog.track("updateFrame, currentPage=\(currentPage)")
         
        
-        
+        updateFrameCauseScrolling = true
         self.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height)
         
         let scrollViewWidth = self.frame.size.width + (sideSpace * 2)
         //scrollview的frame放在-10位置，bounds width＝320，再多出10的空白，所以其實一個view的長度等於10+320+10=340
         //所以contentSize就是340的倍數。
-        scrollView.frame = CGRect(x: -sideSpace, y: 0, width: scrollViewWidth, height: self.frame.size.height)
-        scrollView.contentSize = CGSize(width: scrollViewWidth * CGFloat(assetsCount), height: bounds.size.height)
-        scrollView.contentOffset = CGPoint(x: scrollViewWidth * CGFloat(currentPage), y: 0)
         
+        KrNrLog.track("11111")
+        //scrollView.frame = CGRect(x: -sideSpace, y: 0, width: scrollViewWidth, height: self.frame.size.height)
+        scrollViewFrame = CGRect(x: -sideSpace, y: 0, width: scrollViewWidth, height: self.frame.size.height)
+        KrNrLog.track("22222")
+        //scrollView.contentSize = CGSize(width: scrollViewWidth * CGFloat(assetsCount), height: bounds.size.height)
+        scrollViewContentSize = CGSize(width: scrollViewWidth * CGFloat(assetsCount), height: bounds.size.height)
+        KrNrLog.track("33333")
+        //scrollView.contentOffset = CGPoint(x: scrollViewWidth * CGFloat(currentPage), y: 0)
+        scrollViewContentOffset = CGPoint(x: scrollViewWidth * CGFloat(currentPage), y: 0)
+        KrNrLog.track("444444")
         
         //update EACH KrNrZoomScrollView in scrollView
         for view in scrollView.subviews
@@ -504,6 +616,29 @@ internal class KrNrSlideView: UIView {
                 (view as! KrNrZoomScrollView).updateFrame(newFrame: view.frame, animated: (index == tappedIndex), selected: currentCellFrame)
             }
         }
+        
+        updateFrameCauseScrolling = false
+        
+    }
+    
+    func checkSelectedStatus()
+    {
+        let page = currentPage
+        //KrNrLog.track("checkSelectedStatus...page=\(page)")
+        
+        if let button = self.navigationBar.items?.first?.rightBarButtonItem?.customView
+        {
+            //KrNrLog.track("rightItemButton... tag=[\(button.tag)]")
+            guard selectedAssets.index(of: page) != nil else
+            {
+                button.backgroundColor = .white
+                //KrNrLog.track("page=\(page), NO be selected")
+                return
+            }
+            button.backgroundColor = .green
+            //KrNrLog.track("page=\(page), Be selected")
+        }
+       
         
     }
 }
@@ -538,7 +673,7 @@ extension KrNrSlideView : UIScrollViewDelegate
                 KrNrLog.track("currentPage=\(i), LIMIT to bothSIDE, return...")
                 return i
             }
-            KrNrLog.track("NOWpage=\(i), offset = \(offset), width=\(self.scrollView.frame.width), min=\(min), max=\(max)")
+            KrNrLog.track("balanceWindow() -> NOWpage=\(i), offset = \(offset), width=\(self.scrollView.frame.width), min=\(min), max=\(max)")
             //window to RIGHT
             var views = self.scrollView.subviews
             let trashView = views.filter{ ($0 is KrNrZoomScrollView) == false}
@@ -627,12 +762,25 @@ extension KrNrSlideView : UIScrollViewDelegate
     //scrolling
     public func scrollViewDidScroll(_ scrollView: UIScrollView)
     {
-        KrNrLog.track("offset=\(scrollView.contentOffset.x)")
+        //no matter what situation, checkSelectedStatus again.
+        //especially, collectionView tap one cell and SliderView showed,
+        //If the tappted cell had selected, checkSelectedStatus() should be runned.
+        checkSelectedStatus()
+        
+        //KrNrLog.track("offset=\(scrollView.contentOffset.x)")
+        if updateFrameCauseScrolling
+        {
+            updateFrameCauseScrolling = false
+            KrNrLog.track("updateFrameCauseScrolling = true .... return")
+            return
+        }
+        
         if draggingStart
         {
             //when a user scroll normally, not scroll quickly, scrollViewWillBeginDragging will be triggered
-            //and process'logic will 
+            //and process'logic will
             KrNrLog.track("draggingStart, balanceWindow")
+            draggingStart = false
         }
         else if(beginDraggingOffset > 0)
         {
@@ -640,7 +788,8 @@ extension KrNrSlideView : UIScrollViewDelegate
             let diffOffset = scrollView.contentOffset.x - beginDraggingOffset
             if(diffOffset <= scrollView.frame.width)
             {
-                //目前滾動的offset還不到一個畫面的寬度，不做任何檢查
+                //目前滾動的offset還不到一個畫面的寬度，表示，不做任何檢查
+                //KrNrLog.track(" < 1 frame width....")
                 return
             }
             else
@@ -657,7 +806,6 @@ extension KrNrSlideView : UIScrollViewDelegate
         }
         
         let page = balanceWindow()
-        draggingStart = false
         slideDelegate?.slideTo(currentPage: page, duplicatedCheck: true)
     
 //mark it. play video method changed to present a viewcontroller.

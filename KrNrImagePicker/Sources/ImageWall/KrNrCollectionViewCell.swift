@@ -7,9 +7,14 @@
 
 import UIKit
 import Photos
+
+
+
 class KrNrCollectionViewCell: UICollectionViewCell {
     
-    //
+    
+    var delegate:KrNrAssetSelectedDelegate?
+    var index=0
     var imageManager:PHCachingImageManager!
     fileprivate var shouldUpdateImage = false
     private var currentRequest: PHImageRequestID?
@@ -33,11 +38,17 @@ class KrNrCollectionViewCell: UICollectionViewCell {
         }
     }
     
+    var IsSelected:Bool = false
+    {
+        didSet{
+            checkedButton.backgroundColor = IsSelected ? .green : .white
+        }
+    }
     
     //
-    var index = 0
     let titleLabel: UILabel = {
         let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
         label.textColor = .white
         label.backgroundColor = UIColor.init(red: 0, green: 0, blue: 0, alpha: 0.5)
         label.textAlignment = .right
@@ -46,13 +57,38 @@ class KrNrCollectionViewCell: UICollectionViewCell {
 
     let imageView: UIImageView = {
         let imageview = UIImageView()
+        imageview.translatesAutoresizingMaskIntoConstraints = false
         imageview.contentMode = .scaleAspectFill
         imageview.backgroundColor = .red
         //把image超過的部分剪掉，才不會把imageview撐大，導致cell的size跑掉
         imageview.clipsToBounds = true
         return imageview
     }()
+    
+    //add lazy attribute, because the button needed to wait self created first,
+    //and the button added target event after
+    private lazy var checkedButton:UIButton = {
         
+        let b = UIButton()
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.isUserInteractionEnabled = true
+            
+        if let image = Resources.podImage(named: "checkbox")
+        {
+            b.setImage(image, for: .normal)
+        }
+    
+        b.addTarget(self, action: #selector(checkButtonClick), for: .touchUpInside)
+        return b
+        
+    }()
+    
+    @objc func checkButtonClick(_ sender:UIButton)
+    {
+        IsSelected = !IsSelected
+        delegate?.check(page: index, selected: IsSelected)
+    }
+
     override init(frame: CGRect) {
             
         super.init(frame: frame)
@@ -61,7 +97,6 @@ class KrNrCollectionViewCell: UICollectionViewCell {
         
         self.addSubview(imageView)
         //imageview使用autolayout佈局，或使用下面的frame佈局
-        imageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint(item: imageView, attribute: .bottom, relatedBy: .equal, toItem: contentView, attribute: .bottom, multiplier: 1.0, constant: 0.0).isActive = true
         NSLayoutConstraint(item: imageView, attribute: .top, relatedBy: .equal, toItem: contentView, attribute: .top, multiplier: 1.0, constant: 0.0).isActive = true
         NSLayoutConstraint(item: imageView, attribute: .trailing, relatedBy: .equal, toItem: contentView, attribute: .trailing, multiplier: 1.0, constant: 0.0).isActive = true
@@ -69,7 +104,6 @@ class KrNrCollectionViewCell: UICollectionViewCell {
         
         //add label
         self.addSubview(titleLabel)
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint(item: titleLabel, attribute: .bottom, relatedBy: .equal, toItem: contentView, attribute: .bottom, multiplier: 1.0, constant: 0.0).isActive = true
         
         NSLayoutConstraint(item: titleLabel, attribute: .trailing, relatedBy: .equal, toItem: contentView, attribute: .trailing, multiplier: 1.0, constant: 0.0).isActive = true
@@ -79,6 +113,12 @@ class KrNrCollectionViewCell: UICollectionViewCell {
         NSLayoutConstraint(item: titleLabel, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1.0, constant: 20.0).isActive = true
         
         
+        //add checkbutton
+        self.addSubview(checkedButton)
+        NSLayoutConstraint(item: checkedButton, attribute: .right, relatedBy: .equal, toItem: contentView, attribute: .right, multiplier: 1.0, constant: 0.0).isActive = true
+        NSLayoutConstraint(item: checkedButton, attribute: .top, relatedBy: .equal, toItem: contentView, attribute: .top, multiplier: 1.0, constant: 0.0).isActive = true
+        NSLayoutConstraint(item: checkedButton, attribute: .width, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1.0, constant: 40.0).isActive = true
+        NSLayoutConstraint(item: checkedButton, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1.0, constant: 40.0).isActive = true
     }
 
     required init?(coder aDecoder: NSCoder) {

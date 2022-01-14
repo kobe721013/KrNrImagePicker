@@ -8,6 +8,10 @@
 import UIKit
 import Photos
 
+protocol KrNrAssetSelectedDelegate {
+    func check(page:Int, selected:Bool)
+}
+
 class KrNrImagePickerVC: UIViewController {
 
     private var krnrSlideView:KrNrSlideView?
@@ -17,6 +21,7 @@ class KrNrImagePickerVC: UIViewController {
     private var gotAssets = true
     private var currentPage = 0
     private var rotateTriggerUpdateFrame = false
+    private var selectedAssets = [Int]()
     
     let myCollectionView: UICollectionView = {
 
@@ -174,15 +179,28 @@ class KrNrImagePickerVC: UIViewController {
                 KrNrLog.track("!!! ERROR !!!, get sliderview page is nil")
                 return
             }
+            KrNrLog.track("viewDidLayoutSubviews detect Rotate event...currentpage=\(currentPage)")
             
-            DispatchQueue.global().async {
-                sleep(UInt32(1.0))
-                //如果立馬執行，在找cell position，還會停留在上一個狀態(假設原本直轉橫向)，找到的cell position還會是在直向的位置.所以sleep一會兒。
-                DispatchQueue.main.async {
-                    self.findCellPosition(for: page)
-                }
-            }
+//            DispatchQueue.global().async {
+//                sleep(UInt32(1.0))
+//                //如果立馬執行，在找cell position，還會停留在上一個狀態(假設原本直轉橫向)，找到的cell position還會是在直向的位置.所以sleep一會兒。
+//                DispatchQueue.main.async {
+                    self.scrollTo(currentPage: page, completed: self.findCellPosition(for:))
+//                }
+//            }
         }
+    }
+    
+    func showvisibleCellIds()
+    {
+        let cells = myCollectionView.visibleCells
+        var index=[Int]()
+        for cell in cells
+        {
+            index.append((cell as! KrNrCollectionViewCell).index)
+        }
+        index = index.sorted()
+        KrNrLog.track("frame=\(myCollectionView.frame)... visibleCells ID=\(index)")
     }
     
     /*
@@ -256,7 +274,10 @@ extension KrNrImagePickerVC : UICollectionViewDataSource
         
         
         cell.index = imageManager.serialAssets.index(of: asset)!
+        cell.IsSelected = selectedAssets.contains(cell.index)
+        cell.delegate = self
         cell.titleLabel.isHidden = (asset.mediaType == .image)
+        //cell.titleLabel.text = "\(cell.index)"
         if(asset.mediaType == .video)
         {
             //show video duration
@@ -330,6 +351,31 @@ extension KrNrImagePickerVC : UICollectionViewDataSource
     }
 }
 
+extension KrNrImagePickerVC : KrNrAssetSelectedDelegate
+{
+    public func check(page:Int, selected:Bool)
+    {
+        guard let targetCell = getCellInstance(by: page) else { return }
+        
+        targetCell.IsSelected = selected
+        if(selected)
+        {
+            selectedAssets.append(page)
+        }
+        else
+        {
+            if let i = selectedAssets.index(of: page)
+            {
+                selectedAssets.remove(at: i)
+            }
+            else
+            {
+                KrNrLog.track("page=\(page) Can not find in selectedAssets ")
+            }
+        }
+    }
+}
+
 extension KrNrImagePickerVC : UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate
 {
     func collectionView(_ collectionView: UICollectionView,
@@ -387,6 +433,8 @@ extension KrNrImagePickerVC : UICollectionViewDelegate, UICollectionViewDelegate
         
         KrNrLog.track("FIRST selected cell frame=\(cellFrame)")
         krnrSlideView = KrNrSlideView(selected: cellFrame)
+        krnrSlideView?.selectedDelegate = self
+        krnrSlideView?.selectedAssets = selectedAssets
         guard let krnrsliderview = krnrSlideView else {
             KrNrLog.track("!!!ERROR!!!...krnrSlideView is Nil")
             return
@@ -416,90 +464,11 @@ extension KrNrImagePickerVC : UICollectionViewDelegate, UICollectionViewDelegate
 
 extension KrNrImagePickerVC:KrNrSlideViewDelegate
 {
-    func scrollTo(currentPage:Int) -> Bool
-    {
-        KrNrLog.track("currentPage=\(currentPage)")
-        
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        
-        let asset = imageManager.serialAssets[currentPage]
-        let key = dateFormatter.string(from: asset.creationDate!)
-        KrNrLog.track("key=\(key)")
-        
-        let s = imageManager.sortedDate.index(of: key)
-        let r = assets![key]?.index(of: asset)
-        guard let section = s, let row = r else
-        {
-            KrNrLog.track("ERROR,currentPage=\(currentPage), can not find its indexpath ")
-            return false
-        }
-        
-        
-        KrNrLog.track("section:row=(\(section):\(row)), collectionView frame=\(myCollectionView.frame)")
-        
-        let indexpath = IndexPath(row: row, section: section)
-        myCollectionView.scrollToItem(at: indexpath, at: .top, animated: false)
-        
-            
-        
-        return true
-        
-//        let rectOfCellInTableView = myCollectionView.  //rect rectForRow(at: indexpath)
-//        let rectOfCellInSuperview = myCollectionView.convert(rectOfCellInTableView, to: myCollectionView.superview)
-//
-//        KrNrLog.track("Y of Cell is: \(rectOfCellInSuperview.origin.y)")
-        
-        
-    }
-    
-    
-    func slideTo(currentPage:Int, duplicatedCheck:Bool)
-    {
-        
-        if(self.currentPage == currentPage && duplicatedCheck == true)
-        {
-            KrNrLog.track("duplicate CALLED, return")
-            return
-        }
-        
-        if(currentPage > (imageManager.serialAssets.count - 1))
-        {
-            KrNrLog.track("ERROR...slideTo currentPage=\(currentPage), BUT index out of range")
-            return
-        }
-        //update currentPage
-        self.currentPage = currentPage
-        
-        if(scrollTo(currentPage: currentPage) == false)
-        {
-            return
-        }
-        
-        if(duplicatedCheck == false)
-        {
-            //duplicatedCheck == false,表示是從updateFrame那邊呼叫的，所以要起一個thread去做這件事
-            //因為無法得知，collectionView.scrollToItem()這一個function跑完時的complete event
-            //DispatchQueue.global().async {
-                //等待collectionView scroll 到該page的cell時，才去找visiable cells，否則會找不到
-            //    sleep(UInt32(1.0))
-            //    DispatchQueue.main.async {
-                    self.findCellPosition(for: currentPage)
-            //    }
-            //}
-             
-        }
-        else
-        {
-            findCellPosition(for: currentPage)
-        }
-    }
-    
     /*
      * function: findCellPosition.
      * purpose:  find cell position ON screen. when BIG image drag down, the big image will change to small size and the animation will look like the big image embeded into collectionView'cell.
      */
-    func findCellPosition(for currentPage:Int)
+    func findCellPosition1(for currentPage:Int)
     {
         KrNrLog.track("myCollectionView.frame=\(myCollectionView.frame),currentPage=\(currentPage)")
         
@@ -536,7 +505,7 @@ extension KrNrImagePickerVC:KrNrSlideViewDelegate
                 
                 myCollectionView.scrollRectToVisible(rect, animated: false)
                 DispatchQueue.global().async {
-                    sleep(UInt32(1.0))
+                    sleep(UInt32(0.5))
                     DispatchQueue.main.async {
                         self.findCellPosition(for: currentPage)
                     }
@@ -562,7 +531,236 @@ extension KrNrImagePickerVC:KrNrSlideViewDelegate
         
         //通知sliderView，目前的位置，這樣等等大圖動畫消失才可以回到collection view上的感覺。
         krnrSlideView?.currentCellFrame.origin = cellPosition
+        KrNrLog.track("cellPosition=\(cellPosition)")
+        //showvisibleCellIds()
     }
+    
+    func getIndexPath(by currentPage:Int) -> IndexPath?
+    {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        let asset = imageManager.serialAssets[currentPage]
+        let key = dateFormatter.string(from: asset.creationDate!)
+        
+        
+        let s = imageManager.sortedDate.index(of: key)
+        let r = assets![key]?.index(of: asset)
+        guard let section = s, let row = r else
+        {
+            KrNrLog.track("getIndexPath() ERROR,currentPage=\(currentPage), can not find its indexpath ")
+            return nil
+        }
+        
+        let indexpath = IndexPath(row: row, section: section)
+        
+        return indexpath
+    }
+    
+    func slideTo(currentPage:Int, duplicatedCheck:Bool)
+    {
+        
+        if(self.currentPage == currentPage && duplicatedCheck == true)
+        {
+            //KrNrLog.track("duplicate CALLED, return")
+            return
+        }
+        
+        if(currentPage > (imageManager.serialAssets.count - 1))
+        {
+            KrNrLog.track("ERROR...slideTo currentPage=\(currentPage), BUT index out of range")
+            return
+        }
+        
+        scrollTo(currentPage: currentPage, completed: findCellPosition(for:))
+    }
+    
+    func scrollTo(currentPage:Int, completed: ((Int) -> Void)?)
+    {
+        KrNrLog.track("scrollTo currentPage=\(currentPage)")
+        
+        //update current page
+        self.currentPage = currentPage
+        
+        if let indexpath = getIndexPath(by: currentPage)
+        {
+            KrNrLog.track("myCollectionView frame=\(myCollectionView.frame), Scroll to TOP by indexpath=\(indexpath), ")
+            //scroll to top
+            myCollectionView.scrollToItem(at: indexpath, at: .top, animated: false)
+        
+            //scrollToItem() function needs time to scroll. Theorefore, create a thread to wait some seconds and find cell position. otherwise, if scrollToItem() done and find cell immediately
+            DispatchQueue.global().async {
+                sleep(UInt32(0.2))
+                KrNrLog.track("sleep ..... done")
+                //and call completed event function to find cell position.
+                DispatchQueue.main.async {
+                    completed?(currentPage)
+                }
+
+            }
+            
+        }
+    }
+    
+    func getCellInstance(by currentPage:Int) -> KrNrCollectionViewCell?
+    {
+        guard let indexpath = getIndexPath(by: currentPage) else { return nil }
+        guard let targetCell = myCollectionView.cellForItem(at: indexpath) as? KrNrCollectionViewCell else {
+            
+            KrNrLog.track("ERRIR... find target cell instance fail.")
+            return nil
+            
+        }
+        return targetCell
+    }
+    
+    
+    func findCellPosition(for currentPage:Int)
+    {
+        KrNrLog.track("myCollectionView.frame=\(myCollectionView.frame),currentPage=\(currentPage)")
+        
+       
+        guard let targetCell = getCellInstance(by: currentPage) else { return }
+        
+//        let cells = myCollectionView.visibleCells
+//        var index=[Int]()
+//        //var targetcell:KrNrCollectionViewCell?
+//        for cell in cells
+//        {
+//            index.append((cell as! KrNrCollectionViewCell).index)
+//        }
+//        index = index.sorted()
+//        KrNrLog.track("visibleCells ID=\(index)")
+//
+//        //找出大圖目前在collectionview上面的cell
+//        targetcell = cells.first(where: { ($0 as! KrNrCollectionViewCell).index ==  currentPage}) as? KrNrCollectionViewCell
+//
+//        guard let targetCell = targetcell else {
+//            KrNrLog.track("cant FIND targetCell")
+//            if let max = index.max()
+//            {
+//                let p = myCollectionView.contentOffset
+//                var rect = CGRect(x: p.x, y: p.y, width: myCollectionView.frame.width, height: myCollectionView.frame.height)
+//
+//                //KrNrLog.track("currentPage=\(currentPage), max=\(max)....contentOffset=\(p)")
+//                if currentPage > max
+//                {
+//                    rect.origin.y += myCollectionView.frame.height
+//                    KrNrLog.track("Scroll DONW to search ID=\(currentPage)")
+//                }
+//                else
+//                {
+//                    rect.origin.y -= myCollectionView.frame.height
+//                    KrNrLog.track("Scroll UP to search ID=\(currentPage)")
+//                }
+//                //KrNrLog.track("scroll to rect=\(rect)")
+//
+//                myCollectionView.scrollRectToVisible(rect, animated: false)
+//                DispatchQueue.global().async {
+//                    sleep(UInt32(0.5))
+//                    DispatchQueue.main.async {
+//                        //find cell again.
+//                        self.findCellPosition(for: currentPage)
+//                    }
+//                }
+//            }
+//            return
+//        }
+        
+        //把之前imageview隱藏的cell重新顯示
+        if let nullcell = self.nullCell
+        {
+            nullcell.imageView.isHidden = false
+        }
+        
+        //把目前的target cell的imagevie隱藏起來，做出一個跟photo APP一樣的效果
+        //好像collectionview 上被挖一個洞一樣
+        nullCell = targetCell
+        targetCell.imageView.isHidden = true
+        
+        //scroll後，算出目前cell的位置
+        let myRect = targetCell.frame
+        let cellPosition = self.myCollectionView.convert(myRect.origin, to: self.view)
+        
+        //通知sliderView，目前的位置，這樣等等大圖動畫消失才可以回到collection view上的感覺。
+        krnrSlideView?.currentCellFrame.origin = cellPosition
+        KrNrLog.track("targetcell cellPosition=\(cellPosition)")
+        //showvisibleCellIds()
+    }
+    
+    /*
+     * function: findCellPosition.
+     * purpose:  find cell position ON screen. when BIG image drag down, the big image will change to small size and the animation will look like the big image embeded into collectionView'cell.
+     */
+//    func findCellPosition(for currentPage:Int)
+//    {
+//        KrNrLog.track("myCollectionView.frame=\(myCollectionView.frame),currentPage=\(currentPage)")
+//
+//        let cells = myCollectionView.visibleCells
+//        var index=[Int]()
+//        var targetcell:KrNrCollectionViewCell?
+//        for cell in cells
+//        {
+//            index.append((cell as! KrNrCollectionViewCell).index)
+//        }
+//        index = index.sorted()
+//        KrNrLog.track("visibleCells ID=\(index)")
+//
+//        //找出大圖目前在collectionview上面的cell
+//        targetcell = cells.first(where: { ($0 as! KrNrCollectionViewCell).index ==  currentPage}) as? KrNrCollectionViewCell
+//
+//        guard let targetCell = targetcell else {
+//            KrNrLog.track("cant FIND targetCell")
+//            if let max = index.max()
+//            {
+//                let p = myCollectionView.contentOffset
+//                var rect = CGRect(x: p.x, y: p.y, width: myCollectionView.frame.width, height: myCollectionView.frame.height)
+//
+//                //KrNrLog.track("currentPage=\(currentPage), max=\(max)....contentOffset=\(p)")
+//                if currentPage > max
+//                {
+//                    rect.origin.y += myCollectionView.frame.height
+//                    KrNrLog.track("Scroll DONW to search ID=\(currentPage)")
+//                }
+//                else
+//                {
+//                    rect.origin.y -= myCollectionView.frame.height
+//                    KrNrLog.track("Scroll UP to search ID=\(currentPage)")
+//                }
+//                //KrNrLog.track("scroll to rect=\(rect)")
+//
+//                myCollectionView.scrollRectToVisible(rect, animated: false)
+//                DispatchQueue.global().async {
+//                    sleep(UInt32(0.5))
+//                    DispatchQueue.main.async {
+//                        //find cell again.
+//                        self.findCellPosition(for: currentPage)
+//                    }
+//                }
+//            }
+//            return
+//        }
+//
+//        //把之前imageview隱藏的cell重新顯示
+//        if let nullcell = self.nullCell
+//        {
+//            nullcell.imageView.isHidden = false
+//        }
+//
+//        //把目前的target cell的imagevie隱藏起來，做出一個跟photo APP一樣的效果
+//        //好像collectionview 上被挖一個洞一樣
+//        nullCell = targetCell
+//        targetCell.imageView.isHidden = true
+//
+//        //scroll後，算出目前cell的位置
+//        let myRect = targetCell.frame
+//        let cellPosition = self.myCollectionView.convert(myRect.origin, to: self.view)
+//
+//        //通知sliderView，目前的位置，這樣等等大圖動畫消失才可以回到collection view上的感覺。
+//        krnrSlideView?.currentCellFrame.origin = cellPosition
+//        KrNrLog.track("cellPosition=\(cellPosition)")
+//        //showvisibleCellIds()
+//    }
     
     
     func imageDisappearComplete() {

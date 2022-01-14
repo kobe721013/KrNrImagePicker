@@ -17,7 +17,7 @@ extension TimeInterval
         let minutes = Int(duration / 60)
         let seconds = Int(duration.truncatingRemainder(dividingBy: 60))
         let videoDuration = "\(minutes):\(String(format: "%02d", seconds))"
-        KrNrLog.track("minutes=\(minutes), seconds=\(seconds), videoDuration=\(videoDuration)")
+        //KrNrLog.track("minutes=\(minutes), seconds=\(seconds), videoDuration=\(videoDuration)")
         return videoDuration
     }
 }
