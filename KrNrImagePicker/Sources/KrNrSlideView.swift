@@ -47,7 +47,7 @@ internal class KrNrSlideView: UIView {
     public var slideDelegate:KrNrSlideViewDelegate?
     public var currentCellFrame:CGRect = .zero
     public var selectedDelegate:KrNrAssetSelectedDelegate?
-    public var selectedAssets:[Int]!
+    public var selectedAssetsIndex:[Int]!
     //scroll window parameter
     
     
@@ -177,16 +177,16 @@ internal class KrNrSlideView: UIView {
     {
         let page = currentPage
         
-        if let i = selectedAssets.index(of: page)
+        if let i = selectedAssetsIndex.index(of: page)
         {
             sender.backgroundColor = .white
-            selectedAssets.remove(at: i)
+            selectedAssetsIndex.remove(at: i)
             selectedDelegate?.check(page: page, selected: false)
         }
         else
         {
             sender.backgroundColor = .green
-            selectedAssets.append(currentPage)
+            selectedAssetsIndex.append(currentPage)
             selectedDelegate?.check(page: page, selected: true)
         }
         
@@ -629,7 +629,7 @@ internal class KrNrSlideView: UIView {
         if let button = self.navigationBar.items?.first?.rightBarButtonItem?.customView
         {
             //KrNrLog.track("rightItemButton... tag=[\(button.tag)]")
-            guard selectedAssets.index(of: page) != nil else
+            guard selectedAssetsIndex.index(of: page) != nil else
             {
                 button.backgroundColor = .white
                 //KrNrLog.track("page=\(page), NO be selected")

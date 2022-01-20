@@ -21,7 +21,27 @@ class KrNrImagePickerVC: UIViewController {
     private var gotAssets = true
     private var currentPage = 0
     private var rotateTriggerUpdateFrame = false
-    private var selectedAssets = [Int]()
+    private var selectedAssetsIndex:[Int] = []
+    {
+        didSet
+        {
+            KrNrLog.track("Selected Assets count=\(selectedAssetsIndex.count)")
+            navigationController?.isToolbarHidden = (selectedAssetsIndex.count == 0)
+            if let nextbutton = toolbarItems?.last
+            {
+                nextbutton.title = "Next(\(selectedAssetsIndex.count))"
+            }
+        }
+    }
+    
+    public var imagepickerDelegate:KrNrImagePickerDelegate?
+    public var selectedAssets:[PHAsset]
+    {
+        get{
+            return imageManager.serialAssets.getValues(by: selectedAssetsIndex)
+        }
+    }
+    
     
     let myCollectionView: UICollectionView = {
 
@@ -72,10 +92,38 @@ class KrNrImagePickerVC: UIViewController {
         setupCollectionView()
         permissionCheck()
         
+        
+        //tool bar
+        //navigationController?.isToolbarHidden = false
+        toolbarItems = [
+            UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: self, action: nil),
+            UIBarButtonItem(title: "Next", style: .plain, target: self, action: #selector(nextButtonClick))
+        ]
+        
     }
     
+    @objc private func nextButtonClick(_ button: UIButton) {
+        KrNrLog.track("Next button clicked.....")
+        
+//        let uplodeVc = UIViewController()
+//        uplodeVc.view.backgroundColor = .red
+//        self.navigationController?.pushViewController(uplodeVc, animated: true)
+        
+        self.dismiss(animated: true) {
+            self.imagepickerDelegate?.krnrImagePicker(didSelected: self.selectedAssets)
+        }
+        
+        
+    }
+    
+    
+    
     @objc private func closeButtonClick(_ button: UIButton) {
-        self.dismiss(animated: true, completion: nil)
+        
+        
+        self.dismiss(animated: true, completion: {
+            self.imagepickerDelegate?.krnrImagePicker(closed: true)
+        })
     }
     
     private func setupCollectionView()
@@ -274,7 +322,7 @@ extension KrNrImagePickerVC : UICollectionViewDataSource
         
         
         cell.index = imageManager.serialAssets.index(of: asset)!
-        cell.IsSelected = selectedAssets.contains(cell.index)
+        cell.IsSelected = selectedAssetsIndex.contains(cell.index)
         cell.delegate = self
         cell.titleLabel.isHidden = (asset.mediaType == .image)
         //cell.titleLabel.text = "\(cell.index)"
@@ -360,17 +408,17 @@ extension KrNrImagePickerVC : KrNrAssetSelectedDelegate
         targetCell.IsSelected = selected
         if(selected)
         {
-            selectedAssets.append(page)
+            selectedAssetsIndex.append(page)
         }
         else
         {
-            if let i = selectedAssets.index(of: page)
+            if let i = selectedAssetsIndex.index(of: page)
             {
-                selectedAssets.remove(at: i)
+                selectedAssetsIndex.remove(at: i)
             }
             else
             {
-                KrNrLog.track("page=\(page) Can not find in selectedAssets ")
+                KrNrLog.track("page=\(page) Can not find in selectedAssetsIndex ")
             }
         }
     }
@@ -434,7 +482,7 @@ extension KrNrImagePickerVC : UICollectionViewDelegate, UICollectionViewDelegate
         KrNrLog.track("FIRST selected cell frame=\(cellFrame)")
         krnrSlideView = KrNrSlideView(selected: cellFrame)
         krnrSlideView?.selectedDelegate = self
-        krnrSlideView?.selectedAssets = selectedAssets
+        krnrSlideView?.selectedAssetsIndex = selectedAssetsIndex
         guard let krnrsliderview = krnrSlideView else {
             KrNrLog.track("!!!ERROR!!!...krnrSlideView is Nil")
             return

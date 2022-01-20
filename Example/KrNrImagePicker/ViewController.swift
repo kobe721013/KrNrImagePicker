@@ -87,6 +87,7 @@ class ViewController: UIViewController {
 
     @IBAction func addImage(_ sender: UIButton) {
         let picker = KrNrImagePicker()
+        picker.imagepickerDelegate = self
         present(picker, animated: true, completion: nil)
         
         
@@ -108,5 +109,23 @@ class ViewController: UIViewController {
 //    }
     
 
+}
+
+extension ViewController: KrNrImagePickerDelegate
+{
+    func krnrImagePicker(closed: Bool) {
+        print("krnrImagePicker closed=\(closed)")
+    }
+    
+    func krnrImagePicker(didSelected assetes: [PHAsset]) {
+        
+        for asset in assetes
+        {
+            print("seelcted ID: \(asset.localIdentifier)")
+        }
+        
+    }
+    
+    
 }
 

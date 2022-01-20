@@ -21,3 +21,25 @@ extension TimeInterval
         return videoDuration
     }
 }
+
+extension Array {
+    
+    func element(at index: Int) -> Element? {
+        guard index >= 0, index < count else {
+            return nil
+        }
+
+        return self[index]
+    }
+    
+    func getValues(by indexs:[Int]) -> [Element]
+    {
+        var result = [Element]()
+        for index in indexs
+        {
+            result.append(self[index])
+        }
+        
+        return result
+    }
+}

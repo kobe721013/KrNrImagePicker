@@ -6,20 +6,27 @@
 //
 
 import UIKit
+import Photos
+public protocol KrNrImagePickerDelegate
+{
+    func krnrImagePicker(didSelected assetes:[PHAsset])
+    func krnrImagePicker(closed:Bool)
+}
 
 open class KrNrImagePicker: UINavigationController {
-
-//    private var krnrSlideView:KrNrSlideView!
+  
+    public var imagepickerDelegate:KrNrImagePickerDelegate?
     
-   
     private let picker: KrNrImagePickerVC!
     /// Get a YPImagePicker with the specified configuration.
     public required init() {
     
         picker = KrNrImagePickerVC()
+        
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .fullScreen // Force .fullScreen as iOS 13 now shows modals as cards by default.
-        navigationBar.tintColor = .red
+        navigationBar.tintColor = .purple
+        toolbar.tintColor = .purple
     }
     
     public required init?(coder aDecoder: NSCoder) {
@@ -27,7 +34,13 @@ open class KrNrImagePicker: UINavigationController {
     }
     
     deinit {
-            KrNrLog.track("Picker deinited 👍")
+        KrNrLog.track("Picker deinited 👍")
+        
+        //callback to top caller, assets were selected by user.
+//        if let ddd = imagepickerDelegate {
+//            KrNrLog.track("ddddddddd")
+//            ddd.krnrImagePicker(didSelected: picker.selectedAssets)
+//        }
     }
         
     
@@ -38,7 +51,11 @@ open class KrNrImagePicker: UINavigationController {
         //!!IMPORTANT!!, view will extends to full screen, not under navigation bar
         navigationBar.isTranslucent = true
         
+        //setup delegate
+        picker.imagepickerDelegate = imagepickerDelegate
+        
     }
+    
     
     /*
     // MARK: - Navigation
