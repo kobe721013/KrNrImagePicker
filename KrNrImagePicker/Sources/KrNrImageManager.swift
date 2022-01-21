@@ -75,4 +75,26 @@ class KrNrImageManager : PHCachingImageManager
         //callback assets was prepared
         delegate?.assetsPrepareCompleted(dateGroupAssets)
     }
+    
+    func date(of page:Int, by dateFormat:String?) -> String?
+    {
+        var timeformatString = "yyyyMMdHHmm"
+        if let dateformat = dateFormat
+        {
+            timeformatString = dateformat
+        }
+        let asset = serialAssets[page]
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale.current//Locale.ReferenceType.system
+        dateFormatter.timeZone = TimeZone.ReferenceType.system
+        KrNrLog.track("lcoal=\(Locale.current.description)")
+        dateFormatter.setLocalizedDateFormatFromTemplate(timeformatString)
+        
+        //let asset = imageManager.serialAssets[currentPage]
+        let datetime = dateFormatter.string(from: asset.creationDate!)
+        
+        
+        
+        return datetime
+    }
 }

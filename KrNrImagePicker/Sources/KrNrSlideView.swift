@@ -12,7 +12,7 @@ import Photos
 internal protocol KrNrSlideViewDelegate
 {
     func slideTo(currentPage:Int, duplicatedCheck: Bool)
-    func imageDisappearComplete()
+    func imageDropdownDisappearComplete()
     
 }
 
@@ -20,7 +20,7 @@ internal class KrNrSlideView: UIView {
 
     /*private variable*/
     private var assetsCount:Int = 0
-    private var cachImageManager:PHCachingImageManager!
+    private var cachImageManager:KrNrImageManager!
     private var assets:[PHAsset]!
     private var alreadyAnimation = false
     private let zoomRate:CGFloat = 3.0
@@ -40,7 +40,7 @@ internal class KrNrSlideView: UIView {
     private var centerIndex = 37//31
     private var slideCount = 0
     private var xyRatio:CGFloat = 0.0
-    
+    private var updateFrameCauseScrolling = false
     /*public variable*/
     public var currentBounds:CGSize!
     public var delegate:KrNrSlideViewDelegate?
@@ -97,7 +97,6 @@ internal class KrNrSlideView: UIView {
         {
             return scrollView.contentOffset
         }
-        
     }
   
   
@@ -111,7 +110,7 @@ internal class KrNrSlideView: UIView {
         let bar = UINavigationBar()
         bar.translatesAutoresizingMaskIntoConstraints = false
         let navItem = UINavigationItem(title: "KrNr")
-        let textAttributes = [NSAttributedStringKey.foregroundColor:UIColor.red.withAlphaComponent(1.0)]
+        let textAttributes = [NSAttributedString.Key.foregroundColor:UIColor.red.withAlphaComponent(1.0)]
         bar.titleTextAttributes = textAttributes
         bar.tintColor = UIColor.red.withAlphaComponent(1.0)
         
@@ -185,7 +184,7 @@ internal class KrNrSlideView: UIView {
         }
         else
         {
-            sender.backgroundColor = .green
+            sender.backgroundColor = .yellow
             selectedAssetsIndex.append(currentPage)
             selectedDelegate?.check(page: page, selected: true)
         }
@@ -419,7 +418,7 @@ internal class KrNrSlideView: UIView {
 
                         //ready to dismiss view controller
                         KrNrLog.track("dismiss it...")
-                        self.slideDelegate?.imageDisappearComplete()
+                        self.slideDelegate?.imageDropdownDisappearComplete()
                         self.removeFromSuperview()
                       
                     }
@@ -446,7 +445,7 @@ internal class KrNrSlideView: UIView {
     {
         backgroundColor = UIColor.white.withAlphaComponent(alpha)
         navigationBarView.backgroundColor = UIColor.white.withAlphaComponent(alpha)
-        let textAttributes = [NSAttributedStringKey.foregroundColor:UIColor.red.withAlphaComponent(alpha)]
+        let textAttributes = [NSAttributedString.Key.foregroundColor:UIColor.red.withAlphaComponent(alpha)]
         navigationBar.titleTextAttributes = textAttributes
         navigationBar.tintColor = UIColor.red.withAlphaComponent(alpha)
         
@@ -558,7 +557,7 @@ internal class KrNrSlideView: UIView {
 //        }
 //    }
     
-    private var updateFrameCauseScrolling = false
+    
     //the ViewWillLayoutSubviews of parent'viewcontroller will call the function
     public func updateFrame(bounds:CGRect, tappedIndex: Int)
     {
@@ -592,16 +591,16 @@ internal class KrNrSlideView: UIView {
         //scrollview的frame放在-10位置，bounds width＝320，再多出10的空白，所以其實一個view的長度等於10+320+10=340
         //所以contentSize就是340的倍數。
         
-        KrNrLog.track("11111")
+        
         //scrollView.frame = CGRect(x: -sideSpace, y: 0, width: scrollViewWidth, height: self.frame.size.height)
         scrollViewFrame = CGRect(x: -sideSpace, y: 0, width: scrollViewWidth, height: self.frame.size.height)
-        KrNrLog.track("22222")
+        
         //scrollView.contentSize = CGSize(width: scrollViewWidth * CGFloat(assetsCount), height: bounds.size.height)
         scrollViewContentSize = CGSize(width: scrollViewWidth * CGFloat(assetsCount), height: bounds.size.height)
-        KrNrLog.track("33333")
+        
         //scrollView.contentOffset = CGPoint(x: scrollViewWidth * CGFloat(currentPage), y: 0)
         scrollViewContentOffset = CGPoint(x: scrollViewWidth * CGFloat(currentPage), y: 0)
-        KrNrLog.track("444444")
+        
         
         //update EACH KrNrZoomScrollView in scrollView
         for view in scrollView.subviews
@@ -626,6 +625,16 @@ internal class KrNrSlideView: UIView {
         let page = currentPage
         //KrNrLog.track("checkSelectedStatus...page=\(page)")
         
+        var datetimeString = "xxxxx"
+        if let datetime = cachImageManager.date(of: page, by: nil)
+        {
+            datetimeString = datetime
+        }
+        if let naviItem = navigationBar.items?.first
+        {
+            naviItem.title = datetimeString
+        }
+        
         if let button = self.navigationBar.items?.first?.rightBarButtonItem?.customView
         {
             //KrNrLog.track("rightItemButton... tag=[\(button.tag)]")
@@ -635,7 +644,7 @@ internal class KrNrSlideView: UIView {
                 //KrNrLog.track("page=\(page), NO be selected")
                 return
             }
-            button.backgroundColor = .green
+            button.backgroundColor = .yellow
             //KrNrLog.track("page=\(page), Be selected")
         }
        

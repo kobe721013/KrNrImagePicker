@@ -41,7 +41,7 @@ class KrNrCollectionViewCell: UICollectionViewCell {
     var IsSelected:Bool = false
     {
         didSet{
-            checkedButton.backgroundColor = IsSelected ? .green : .white
+            checkedButton.backgroundColor = IsSelected ? .yellow : .white
         }
     }
     
