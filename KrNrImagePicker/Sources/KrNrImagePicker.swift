@@ -7,6 +7,8 @@
 
 import UIKit
 import Photos
+
+//callback for users. told them, which assets be selected.
 public protocol KrNrImagePickerDelegate
 {
     func krnrImagePicker(didSelected assetes:[PHAsset])
@@ -16,9 +18,22 @@ public protocol KrNrImagePickerDelegate
 open class KrNrImagePicker: UINavigationController {
   
     public var imagepickerDelegate:KrNrImagePickerDelegate?
+    {
+        didSet{
+            picker.imagepickerDelegate = imagepickerDelegate
+        }
+    }
+    
+    public var coustomerViewController:KrNrCustomizedViewController?
+    {
+        didSet{
+            picker.customizedViewController = coustomerViewController
+        }
+    }
     
     private let picker: KrNrImagePickerVC!
-    /// Get a YPImagePicker with the specified configuration.
+    
+   
     public required init() {
     
         picker = KrNrImagePickerVC()
@@ -34,13 +49,9 @@ open class KrNrImagePicker: UINavigationController {
     }
     
     deinit {
-        KrNrLog.track("Picker deinited 👍")
         
-        //callback to top caller, assets were selected by user.
-//        if let ddd = imagepickerDelegate {
-//            KrNrLog.track("ddddddddd")
-//            ddd.krnrImagePicker(didSelected: picker.selectedAssets)
-//        }
+        picker.callBackDidSelectedAssets()
+        KrNrLog.track("Picker deinited 👍")
     }
         
     
@@ -52,7 +63,7 @@ open class KrNrImagePicker: UINavigationController {
         navigationBar.isTranslucent = true
         
         //setup delegate
-        picker.imagepickerDelegate = imagepickerDelegate
+        //picker.imagepickerDelegate = imagepickerDelegate
         
     }
     

@@ -42,6 +42,7 @@ class KrNrImagePickerVC: UIViewController {
             return imageManager.serialAssets.getValues(by: selectedAssetsIndex)
         }
     }
+    public var customizedViewController:KrNrCustomizedViewController?
     
     
     let myCollectionView: UICollectionView = {
@@ -108,13 +109,20 @@ class KrNrImagePickerVC: UIViewController {
     @objc private func nextButtonClick(_ button: UIButton) {
         KrNrLog.track("Next button clicked.....")
         
-//        let uplodeVc = UIViewController()
-//        uplodeVc.view.backgroundColor = .red
-//        self.navigationController?.pushViewController(uplodeVc, animated: true)
-        
-        self.dismiss(animated: true) {
-            self.imagepickerDelegate?.krnrImagePicker(didSelected: self.selectedAssets)
+        guard let customerVC = customizedViewController else
+        {
+            self.callBackDidSelectedAssets()
+            self.dismiss(animated: true)
+            return
         }
+        
+        customerVC.delegate = self
+        self.navigationController?.pushViewController(customerVC, animated: true)
+    }
+    
+    public func callBackDidSelectedAssets()
+    {
+        self.imagepickerDelegate?.krnrImagePicker(didSelected: self.selectedAssets)
     }
     
     
@@ -704,6 +712,13 @@ extension KrNrImagePickerVC:KrNrSlideViewDelegate
         
         //turn ON scrollsToTop
         myCollectionView.scrollsToTop = true
+    }
+}
+
+extension KrNrImagePickerVC:KrNrCustomizedViewControllerDelegate
+{
+    func krnrCustomerVCDidSelectedAssets() -> [PHAsset] {
+        return self.selectedAssets
     }
 }
 

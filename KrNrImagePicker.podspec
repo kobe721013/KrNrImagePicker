@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'KrNrImagePicker'
-  s.version          = '0.0.19'
+  s.version          = '0.0.20'
   s.summary          = 'A short description of KrNrImagePicker.'
   s.swift_version = '4.2'
 # This description is used to generate tags and improve search results.
