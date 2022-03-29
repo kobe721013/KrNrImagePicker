@@ -65,6 +65,23 @@ class KrNrCollectionViewCell: UICollectionViewCell {
         return imageview
     }()
     
+    var uploadDone:Bool = false
+    {
+        didSet{
+            
+            if(uploadDone == true)
+            {
+                self.layer.borderColor = UIColor.purple.cgColor
+                self.layer.borderWidth = 5
+            }
+            else
+            {
+                self.layer.borderColor = .none
+                self.layer.borderWidth = 0
+            }
+        }
+    }
+    
     //add lazy attribute, because the button needed to wait self created first,
     //and the button added target event after
     private lazy var checkedButton:UIButton = {

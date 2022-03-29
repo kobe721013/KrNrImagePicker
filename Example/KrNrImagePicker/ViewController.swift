@@ -11,10 +11,22 @@ import KrNrImagePicker
 import Photos
 class ViewController: UIViewController {
 
-  
+    var highlightAssets:[String]!
+  //["7E5F6D7F-E444-482B-8423-53D1C9D724AD/L0/001","C93A4418-ACF5-4B8E-B01D-00B7A87B9DC4/L0/001","C5FEFE60-0ADB-4A7B-9869-69D4A002F28C/L0/001" ]
     var shouldUpdateImage = true
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        if let highlighted = UserDefaults.standard.array(forKey: "uploadDone") as? [String]
+        {
+            highlightAssets = highlighted
+            print("highlightAssets=\(highlightAssets)")
+        }
+        else
+        {
+            highlightAssets = [String]()
+        }
+        
         
         guard self.shouldUpdateImage else {
             print("1")
@@ -34,6 +46,9 @@ class ViewController: UIViewController {
     }
     
     override func viewDidAppear(_ animated: Bool) {
+        
+        UserDefaults.standard.setValue(["7E5F6D7F-E444-482B-8423-53D1C9D724AD/L0/001","C93A4418-ACF5-4B8E-B01D-00B7A87B9DC4/L0/001","C5FEFE60-0ADB-4A7B-9869-69D4A002F28C/L0/001" ], forKey: "uploadDone")
+        UserDefaults.standard.synchronize()
         
 //        print("viewDidAppear --- button frame=\(button.frame)")
 //        print("viewDidAppear --- imageview frame=\(imageView.frame)")
@@ -89,6 +104,7 @@ class ViewController: UIViewController {
         let picker = KrNrImagePicker()
         picker.imagepickerDelegate = self
         picker.coustomerViewController = getCustomerViewController()
+        picker.highlightAssets = highlightAssets
         present(picker, animated: true, completion: nil)
     }
     

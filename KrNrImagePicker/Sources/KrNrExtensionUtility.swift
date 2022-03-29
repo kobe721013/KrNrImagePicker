@@ -10,7 +10,7 @@ import CoreMedia
 
 extension TimeInterval
 {
-    func toHumanFormat() -> String
+    public func toHumanFormat() -> String
     {
         let duration = self
         //let durationTime = CMTimeGetSeconds(duration)
@@ -24,7 +24,7 @@ extension TimeInterval
 
 extension Array {
     
-    func element(at index: Int) -> Element? {
+    public func element(at index: Int) -> Element? {
         guard index >= 0, index < count else {
             return nil
         }
@@ -32,7 +32,7 @@ extension Array {
         return self[index]
     }
     
-    func getValues(by indexs:[Int]) -> [Element]
+    public func getValues(by indexs:[Int]) -> [Element]
     {
         var result = [Element]()
         for index in indexs

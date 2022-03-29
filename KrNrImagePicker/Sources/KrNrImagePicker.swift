@@ -31,6 +31,13 @@ open class KrNrImagePicker: UINavigationController {
         }
     }
     
+    public var highlightAssets:[String]?
+    {
+        didSet{
+            picker.highlightAssets = highlightAssets
+        }
+    }
+    
     private let picker: KrNrImagePickerVC!
     
    

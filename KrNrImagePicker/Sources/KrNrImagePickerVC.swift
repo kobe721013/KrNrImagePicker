@@ -80,10 +80,12 @@ class KrNrImagePickerVC: UIViewController {
         return collectionview
     }()
     
+    var highlightAssets:[String]? = nil
+    
     open override func viewDidLoad() {
         super.viewDidLoad()
         
-        self.title = "KrrN"
+        self.title = "KrNrImagePicker"
         imageManager = KrNrImageManager.shared()
         imageManager.delegate = self
         
@@ -104,6 +106,11 @@ class KrNrImagePickerVC: UIViewController {
             nextbutton
         ]
         
+        //init highlightAssets array
+        if highlightAssets == nil
+        {
+            highlightAssets = [String]()
+        }
     }
     
     @objc private func nextButtonClick(_ button: UIButton) {
@@ -330,6 +337,7 @@ extension KrNrImagePickerVC : UICollectionViewDataSource
         let asset = imageManager.dateGroupAssets[keyString]![row]
         
         
+        cell.uploadDone = (highlightAssets!.index(of: asset.localIdentifier) != nil)
         cell.index = imageManager.serialAssets.index(of: asset)!
         cell.IsSelected = selectedAssetsIndex.contains(cell.index)
         cell.delegate = self
